@@ -90,8 +90,8 @@ RPLiDAR::RPLiDAR(rclcpp::NodeOptions options) : rclcpp::Node("node_name", option
     RCLCPP_INFO(this->get_logger(), "Complete! lidar was initialized.");
 
     // Initialize subscriber
-    RCLCPP_INFO(this->get_logger(), "Initialize subscribers...");
-    RCLCPP_INFO(this->get_logger(), "Complete! Subscribers were initialized.");
+    // RCLCPP_INFO(this->get_logger(), "Initialize subscribers...");
+    // RCLCPP_INFO(this->get_logger(), "Complete! Subscribers were initialized.");
 
     // Initialize publisher
     RCLCPP_INFO(this->get_logger(), "Initialize publishers...");
@@ -300,8 +300,8 @@ void RPLiDAR::run()
 
     // Main loop
     for(rclcpp::WallRate loop(this->SCAN_FREQUENCY); rclcpp::ok(); loop.sleep()){
-        size_t count = 8192;
         sl_lidar_response_measurement_node_hq_t nodes[8192];
+        size_t count = sizeof(nodes)/sizeof(nodes[0]);
         
         const auto start_scan_time = this->now();
         uint32_t op_result = this->driver->grabScanDataHq(nodes, count);
@@ -330,13 +330,12 @@ void RPLiDAR::run()
 
                 for(size_t i=0; i<count; i++){
                     if(nodes[i].dist_mm_q2 != 0){
-                        float angle = this->getAngle(nodes[i]);
-                        int angle_value = (int)(angle * angle_compensate_multiple);
+                        int angle_value = (int)(this->getAngle(nodes[i]) * angle_compensate_multiple);
                         if((angle_value - angle_compensate_offset) < 0) angle_compensate_offset = angle_value;
                         for(int j=0; j<angle_compensate_multiple; j++){
                             int angle_compensate_nodes_index = angle_value - angle_compensate_offset + j;
                             if(angle_compensate_nodes_index >= angle_compensate_nodes_count){
-                                angle_compensate_nodes_index = angle_compensate_nodes_index - 1;
+                                angle_compensate_nodes_index -= 1;
                             }
                             angle_compensate_nodes[angle_compensate_nodes_index] = nodes[i];
                         }
@@ -349,22 +348,21 @@ void RPLiDAR::run()
                     angle_min, angle_max, 
                     max_distance
                 );
-
                 delete angle_compensate_nodes;
             }
             else{
                 int start_node = 0, end_node = 0;
                 int i=0;
                 for(i=0; nodes[i].dist_mm_q2 == 0; i++);
-                start_node = i-1;
+                start_node = i;
                 for(i=count-1; nodes[i].dist_mm_q2 == 0; i--);
-                end_node = i+1;
+                end_node = i;
 
                 angle_min = this->getAngle(nodes[start_node]) * TO_RAD;
-                angle_max = this->getAngle(nodes[end_node]) * TO_RAD;
+                angle_max = this->getAngle(nodes[end_node])   * TO_RAD;
 
                 this->toROS2LaserScan(laser_scan_msg.get(),
-                    &nodes[start_node], end_node-start_node +1,
+                    &nodes[start_node], end_node-start_node+1,
                     start_scan_time, scan_duration,
                     angle_min, angle_max, 
                     max_distance);

@@ -6,6 +6,10 @@
         "limitSymbolsToIncludedHeaders": false
       },
       "includePath": [
+        "${workspaceFolder}/**",
+        "${workspaceFolder}/rplidar_driver/include/**",
+        "${workspaceFolder}/rplidar_driver/lib/include/**",
+        "${workspaceFolder}/rplidar_driver/lib/src/**",
         "/opt/ros/humble/include/**",
         "/usr/include/**"
       ],
