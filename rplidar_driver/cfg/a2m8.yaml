@@ -1,0 +1,7 @@
+rplidar:
+  serial_port: "/dev/ttyUSB0"
+  serial_baudrate: 115200
+  frame_id: "a2m8_laser"
+  inverted: false
+  angle_compensate: true
+  scan_frequency: 10.0
