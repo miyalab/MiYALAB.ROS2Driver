@@ -170,7 +170,7 @@ void RPLiDAR::toROS2LaserScan(sensor_msgs::msg::LaserScan *laser,
     bool reverse_data = (!this->INVERTED && reversed) || (this->INVERTED && !reversed);
     if(!reverse_data){
         for(size_t i=0; i<node_count; i++){
-            float read_value = (float) nodes[i].dist_mm_q2/4.0f/1000;
+            float read_value = (float)nodes[i].dist_mm_q2/4.0f/1000;
             if(read_value == 0.0) laser->ranges[i] = std::numeric_limits<float>::infinity();
             else                  laser->ranges[i] = read_value;
             laser->intensities[i] = (float)(nodes[i].quality >> 2);
