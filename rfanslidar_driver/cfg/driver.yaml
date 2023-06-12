@@ -14,7 +14,7 @@ rfans:
       max:  15.0
   points:
     publish: true
-    near_range: 50.0
+    near_range: 20.0
     near_publish: true
   img:
     depth_publish    : true

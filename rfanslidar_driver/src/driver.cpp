@@ -171,15 +171,16 @@ void RFansLiDAR::run()
         if(this->depth_img_publisher.get()){
             depth_img.header = header;
             depth_img.encoding = sensor_msgs::image_encodings::TYPE_32FC1;
-            depth_img.image = cv::Mat(img_size, CV_32FC1, cv::Scalar(0));
+            depth_img.image = cv::Mat(img_size, CV_32FC1, cv::Scalar(-1.0));
         }
         if(this->intensity_img_publisher.get()){
             intensity_img.header = header;
             intensity_img.encoding = sensor_msgs::image_encodings::TYPE_32FC1;
-            intensity_img.image = cv::Mat(img_size, CV_32FC1, cv::Scalar(0));
+            intensity_img.image = cv::Mat(img_size, CV_32FC1, cv::Scalar(-1.0));
         }
 
         for(int i=0, size=polars.polars.size(); i<size; i++){
+            if(polars.polars[i].range < 0.1) continue;
             if(polars.polars[i].theta < this->SCAN_THETA_MIN || this->SCAN_THETA_MAX < polars.polars[i].theta) continue;
             if(polars.polars[i].phi < this->SCAN_PHI_MIN || this->SCAN_PHI_MAX < polars.polars[i].phi) continue;
 
