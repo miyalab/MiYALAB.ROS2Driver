@@ -3,7 +3,7 @@
 <package format="3">
   <name>rfanslidar_driver</name>
   <version>1.0.0</version>
-  <description>The rfans ros2 package, support rplidar A2/A1 and A3/S1</description>
+  <description>The package is lidar driver mede in surestar ros2 package, support rfans series</description>
   <maintainer email="miyalab.workspace@gmail.com">kmiyauchi</maintainer>
   <license>MIT</license>
 
