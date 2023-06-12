@@ -21,7 +21,7 @@ find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(sensor_msgs REQUIRED)
-find_package(OpenCV REQUIRED COMPONENTS core highgui videoio)
+find_package(OpenCV REQUIRED COMPONENTS core highgui imgproc)
 find_package(cv_bridge REQUIRED)
 
 link_directories(

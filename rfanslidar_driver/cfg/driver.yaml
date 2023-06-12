@@ -19,6 +19,8 @@ rfans:
   img:
     depth_publish    : true
     intensity_publish: true
+    theta_resolution : 0.36
+    phi_resolution   : 2.0
   offset:
     linear:
       x: 0.0

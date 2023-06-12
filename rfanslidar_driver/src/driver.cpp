@@ -19,6 +19,11 @@
 #include "rfanslidar_driver/driver.hpp"
 
 //-----------------------------
+// Symbol
+//-----------------------------
+#define DEBUG
+
+//-----------------------------
 // Namespace & using
 //-----------------------------
 using sensor_msgs::msg::PointCloud;
@@ -28,6 +33,7 @@ using sensor_msgs::msg::Image;
 // Const
 //-----------------------------
 constexpr double TO_RAD = M_PI / 180.0;
+constexpr double TO_DEG = 180.0 / M_PI;
 
 //-----------------------------
 // Methods
@@ -71,6 +77,8 @@ RFansLiDAR::RFansLiDAR(rclcpp::NodeOptions options) : rclcpp::Node("rfans_lidar"
     this->forceSet(&this->OFFSET_ANGULAR_X, this->declare_parameter("rfans.offset.angular.x", 0.0) * TO_RAD);
     this->forceSet(&this->OFFSET_ANGULAR_Y, this->declare_parameter("rfans.offset.angular.y", 0.0) * TO_RAD);
     this->forceSet(&this->OFFSET_ANGULAR_Z, this->declare_parameter("rfans.offset.angular.z", 0.0) * TO_RAD);
+    this->forceSet(&this->IMG_THETA_RESOLUTION, this->declare_parameter("rfans.img.theta_resolution", 0.36) * TO_RAD);
+    this->forceSet(&this->IMG_PHI_RESOLUTION, this->declare_parameter("rfans.img.phi_resolution", 2.0) * TO_RAD);
     RCLCPP_INFO(this->get_logger(), "Complete! Parameters were initialized.");
 
     // Initialize lidar
@@ -130,6 +138,7 @@ void RFansLiDAR::run()
         (this->SCAN_THETA_MAX - this->SCAN_THETA_MIN) / this->IMG_THETA_RESOLUTION,
         (this->SCAN_PHI_MAX - this->SCAN_PHI_MIN) / this->IMG_PHI_RESOLUTION
     );
+    RCLCPP_INFO_STREAM(this->get_logger(), img_size);
     cv_bridge::CvImage depth_img;
     cv_bridge::CvImage intensity_img;
     PointCloud::UniquePtr points_msg;
@@ -141,13 +150,12 @@ void RFansLiDAR::run()
 
     // Main loop
     for(rclcpp::WallRate loop(this->SCAN_RATE); rclcpp::ok(); loop.sleep()){
-        
         std_msgs::msg::Header header;
         MiYALAB::Sensor::PointCloudPolar polars;
         header.frame_id = this->FRAME_ID;
         header.stamp = this->now();
         this->rfans->getPoints(&polars);
-        
+
         if(this->points_publisher.get()){
             points_msg = std::make_unique<PointCloud>();
             points_msg->header = header;
@@ -161,13 +169,16 @@ void RFansLiDAR::run()
             points_near_msg->channels[0].name = "intensity";
         }
         if(this->depth_img_publisher.get()){
-            depth_img.image = cv::Mat(img_size, CV_32FC1, cv::Scalar(NAN));
-            depth_img_msg = std::make_unique<Image>();
+            depth_img.header = header;
+            depth_img.encoding = sensor_msgs::image_encodings::TYPE_32FC1;
+            depth_img.image = cv::Mat(img_size, CV_32FC1, cv::Scalar(0));
         }
         if(this->intensity_img_publisher.get()){
-            intensity_img.image = cv::Mat(img_size, CV_32FC1, cv::Scalar(NAN));
-            intensity_img_msg = std::make_unique<Image>();
+            intensity_img.header = header;
+            intensity_img.encoding = sensor_msgs::image_encodings::TYPE_32FC1;
+            intensity_img.image = cv::Mat(img_size, CV_32FC1, cv::Scalar(0));
         }
+
         for(int i=0, size=polars.polars.size(); i<size; i++){
             if(polars.polars[i].theta < this->SCAN_THETA_MIN || this->SCAN_THETA_MAX < polars.polars[i].theta) continue;
             if(polars.polars[i].phi < this->SCAN_PHI_MIN || this->SCAN_PHI_MAX < polars.polars[i].phi) continue;
@@ -177,8 +188,8 @@ void RFansLiDAR::run()
                 double theta = polars.polars[i].theta + this->OFFSET_ANGULAR_Z;
                 geometry_msgs::msg::Point32 point;
                 point.x = polars.polars[i].range * std::cos(phi) * std::cos(theta);
-                point.y = polars.polars[i].range * std::cos(phi) * std::sin(theta) * std::sin(this->OFFSET_ANGULAR_X);
-                point.z = polars.polars[i].range * std::sin(phi) * std::cos(this->OFFSET_ANGULAR_X);
+                point.y = polars.polars[i].range * std::cos(phi) * std::sin(theta);
+                point.z = polars.polars[i].range * std::sin(phi);
 
                 if(this->points_publisher.get()){
                     points_msg->points.emplace_back(point);
@@ -194,27 +205,26 @@ void RFansLiDAR::run()
                 int py = img_size.height - (polars.polars[i].phi - this->SCAN_PHI_MIN) / this->IMG_PHI_RESOLUTION;
 
                 if(0<=px && px<img_size.width && 0<=py && py<img_size.height){
-                    if(this->depth_img_publisher.get()) depth_img.image.at<float>(py, px) = polars.polars[i].range;
+                    if(this->depth_img_publisher.get())     depth_img.image.at<float>(py, px) = polars.polars[i].range;
                     if(this->intensity_img_publisher.get()) intensity_img.image.at<float>(py, px) = polars.intensity[i];
+
                 }
             }
         }
+        
 
-        if(this->points_publisher.get()) this->points_publisher->publish(std::move(points_msg));
-        if(this->points_near_publisher.get()) this->points_publisher->publish(std::move(points_near_msg));
+        if(this->points_publisher.get())      this->points_publisher->publish(std::move(points_msg));
+        if(this->points_near_publisher.get()) this->points_near_publisher->publish(std::move(points_near_msg));
         if(this->depth_img_publisher.get()){
-            this->depth_img_publisher->publish(std::move(depth_img_msg));
-            intensity_img.toImageMsg(*depth_img_msg);
+            depth_img_msg = std::make_unique<Image>();
+            depth_img.toImageMsg(*depth_img_msg);
             this->depth_img_publisher->publish(std::move(depth_img_msg));
         }
         if(this->intensity_img_publisher.get()){
-            this->depth_img_publisher->publish(std::move(intensity_img_msg));
-            intensity_img.toImageMsg(*depth_img_msg);
+            intensity_img_msg = std::make_unique<Image>();
+            intensity_img.toImageMsg(*intensity_img_msg);
             this->intensity_img_publisher->publish(std::move(intensity_img_msg));
         }
-
-        cv::imshow("img", depth_img.image);
-        cv::waitKey(1);
     }
     RCLCPP_INFO(this->get_logger(), "%s has stoped.", this->get_name());
 }
