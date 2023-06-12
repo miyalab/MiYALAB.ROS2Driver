@@ -135,7 +135,7 @@ bool RFansDriver::scanStart(const int &hz)
     for(i=0; i<10; i++){
         RFansDeviceStatus status;
         this->getDeviceInfo(&status);
-        if(hz -0.1 <= status.motor_speed && status.motor_speed <= hz + 0.1) break;
+        if(hz -1.0 <= status.motor_speed && status.motor_speed <= hz + 1.0) break;
     }
     if(i==10) return false;
     return true;

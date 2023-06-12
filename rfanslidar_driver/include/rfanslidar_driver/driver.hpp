@@ -40,23 +40,26 @@ public:
     RFansLiDAR(rclcpp::NodeOptions options = rclcpp::NodeOptions());
     ~RFansLiDAR();
 private:
+    rclcpp::Publisher<sensor_msgs::msg::PointCloud>::SharedPtr points_publisher;
+    rclcpp::Publisher<sensor_msgs::msg::PointCloud>::SharedPtr points_near_publisher;
+    rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr depth_img_publisher;
+    rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr intensity_img_publisher;
+
     const int SCAN_RATE = 20;
     const std::string FRAME_ID = "";
-    const std::string IP_ADDRESS = "192.168.0.3";
-    const int STATUS_PORT = 2030;
-    const double SCAN_ANGLE_MIN = -M_PI;
-    const double SCAN_ANGLE_MAX =  M_PI;
-    const bool POINTS_PUBLISH = false;
-    const bool POINT_NEAR_PUBLISH = false;
-    const double RANGE_NEAR = 50;
-    const bool DEPTH_IMG_PUBLISH = false;
-    const bool INTENSITY_IMG_PUBLISH = false;
+    const double SCAN_THETA_MIN = -M_PI;
+    const double SCAN_THETA_MAX =  M_PI;
+    const double SCAN_PHI_MIN   =  M_PI;
+    const double SCAN_PHI_MAX   =  M_PI;
+    const double POINTS_NEAR_RANGE = 50;
     const double OFFSET_LINEAR_X = 0.0;
     const double OFFSET_LINEAR_Y = 0.0;
     const double OFFSET_LINEAR_Z = 0.0;
     const double OFFSET_ANGULAR_X = 0.0;
     const double OFFSET_ANGULAR_Y = 0.0;
     const double OFFSET_ANGULAR_Z = 0.0;
+    const double IMG_THETA_RESOLUTION = 0.36;
+    const double IMG_PHI_RESOLUTION = 2.0; 
     template<typename T, typename U> static void forceSet(const T *value, const U &set_value){*((T*)value) = set_value;}
 
     std::shared_ptr<MiYALAB::Sensor::RFansDriver> rfans;

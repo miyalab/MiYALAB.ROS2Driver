@@ -1,21 +1,25 @@
 {
-  "configurations": [
-    {
-      "includePath": [
-        "${workspaceFolder}/**",
-        "${workspaceFolder}/rfanslidar_driver/include/**",
-        "${workspaceFolder}/rplidar_driver/include/**",
-        "${workspaceFolder}/rplidar_driver/lib/include/**",
-        "${workspaceFolder}/rplidar_driver/lib/src/**",
-        "/opt/ros/humble/include/**",
-        "/usr/include/**"
-      ],
-      "name": "ROS",
-      "intelliSenseMode": "gcc-x64",
-      "compilerPath": "/usr/bin/gcc",
-      "cStandard": "gnu11",
-      "cppStandard": "c++17"
-    }
-  ],
-  "version": 4
+    "configurations": [
+        {
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/rfanslidar_driver/include/**",
+                "${workspaceFolder}/rplidar_driver/include/**",
+                "/home/kmiyauchi/workspace/ros2_ws/install/miyalab_interfaces/include/**",
+                "/usr/include/**",
+                "/opt/ros/humble/include/**",
+                "/home/kmiyauchi/ros2_ws/src/MiYALAB.ROS2Driver/rfanslidar_driver/include",
+                "/opt/ros/humble/include/sensor_msgs",
+                "/opt/ros/humble/include/std_msgs",
+                "/opt/ros/humble/include/geometry_msgs",
+                "/opt/ros/humble/include/std_srvs"
+            ],
+            "name": "ROS",
+            "intelliSenseMode": "linux-gcc-x64",
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "c17",
+            "cppStandard": "c++17"
+        }
+    ],
+    "version": 4
 }

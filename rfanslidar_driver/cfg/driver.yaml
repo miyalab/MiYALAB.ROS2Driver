@@ -6,20 +6,24 @@ rfans:
     status_port: 2030
   scan:
     rate: 20              # 20 or 10 or 5 or 0
-    angle_min: -180.0
-    angle_max:  180.0
+    theta:
+      min: -180.0
+      max:  180.0
+    phi:
+      min: -15.0
+      max:  15.0
   points:
-    publish: false
+    publish: true
     near_range: 50.0
-    near_publish: false
+    near_publish: true
   img:
-    depth_publish    : false
-    intensity_publish: false
+    depth_publish    : true
+    intensity_publish: true
   offset:
     linear:
       x: 0.0
       y: 0.0
-      z: 0.0
+      z: 1.0
     angular:
       x: 0.0
       y: 0.0

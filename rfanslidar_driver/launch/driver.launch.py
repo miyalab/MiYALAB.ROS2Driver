@@ -7,7 +7,7 @@ from launch import LaunchDescription
 from launch_ros.actions import Node
 
 def generate_launch_description():
-    pkg_prefix = get_package_share_directory("rplidar_driver")
+    pkg_prefix = get_package_share_directory("rfanslidar_driver")
    
     container = Node(
 	    package='rclcpp_components',

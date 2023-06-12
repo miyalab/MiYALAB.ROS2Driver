@@ -21,12 +21,15 @@ find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(OpenCV REQUIRED COMPONENTS core highgui videoio)
+find_package(cv_bridge REQUIRED)
 
-link_directories(/usr/local/lib)
+link_directories(
+  /usr/local/lib
+)
 include_directories(
   include
-  lib/include
-  lib/src
+  lib/RFansLiDAR/include
 )
 add_library(${PROJECT_NAME} SHARED
   src/driver.cpp
@@ -37,8 +40,11 @@ ament_target_dependencies(${PROJECT_NAME}
   rclcpp_components
   sensor_msgs
   std_srvs
+  cv_bridge
+  OpenCV
 )
-rclcpp_components_register_nodes(${PROJECT_NAME} "MiYALAB::ROS2::RPLiDAR")
+target_link_libraries(${PROJECT_NAME} MiYALAB.Cpp.Sensor.RFansLiDAR)
+rclcpp_components_register_nodes(${PROJECT_NAME} "MiYALAB::ROS2::RFansLiDAR")
 
 install(TARGETS ${PROJECT_NAME} DESTINATION lib)
 
