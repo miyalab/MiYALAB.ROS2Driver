@@ -207,7 +207,6 @@ void RFansLiDAR::run()
                 if(0<=px && px<img_size.width && 0<=py && py<img_size.height){
                     if(this->depth_img_publisher.get())     depth_img.image.at<float>(py, px) = polars.polars[i].range;
                     if(this->intensity_img_publisher.get()) intensity_img.image.at<float>(py, px) = polars.intensity[i];
-
                 }
             }
         }
