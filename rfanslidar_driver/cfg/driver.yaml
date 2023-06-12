@@ -10,8 +10,8 @@ rfans:
     angle_max:  180.0
   points:
     publish: false
-    near_poins_range: 50.0
-    near_points_publish: false
+    near_range: 50.0
+    near_publish: false
   img:
     depth_publish    : false
     intensity_publish: false

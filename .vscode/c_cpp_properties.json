@@ -1,10 +1,6 @@
 {
   "configurations": [
     {
-      "browse": {
-        "databaseFilename": "${default}",
-        "limitSymbolsToIncludedHeaders": false
-      },
       "includePath": [
         "${workspaceFolder}/**",
         "${workspaceFolder}/rfanslidar_driver/include/**",

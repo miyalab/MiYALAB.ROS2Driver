@@ -15,6 +15,10 @@
 // Namespace & using
 //-----------------------------
 
+//-----------------------------
+// Const
+//-----------------------------
+constexpr double TO_RAD = M_PI / 180.0;
 
 //-----------------------------
 // Methods
@@ -30,7 +34,7 @@ namespace ROS2{
  * 
  * @param options 
  */
-RFansLiDAR::RFansLiDAR(rclcpp::NodeOptions options) : rclcpp::Node("node_name", options)
+RFansLiDAR::RFansLiDAR(rclcpp::NodeOptions options) : rclcpp::Node("rfans_lidar", options)
 {
     // Using placeholders
     using std::placeholders::_1;
@@ -39,10 +43,28 @@ RFansLiDAR::RFansLiDAR(rclcpp::NodeOptions options) : rclcpp::Node("node_name", 
 
     // Initialize parameters
     RCLCPP_INFO(this->get_logger(), "Initialize parameters...");
+    const std::string IP_ADDRESS = this->declare_parameter("rfans.device.ip_address", "192.168.0.3");
+    const std::string MODEL_NAME = this->declare_parameter("rfans.device.model", "R-Fans-16");
+    const int STATUS_PORT = this->declare_parameter("rfans.device.status_port", 2030);
+    this->forceSet(&SCAN_RATE, this->declare_parameter("rfans.scan.rate", 20));
+    this->forceSet(&SCAN_ANGLE_MIN, this->declare_parameter("rfans.scan.angle_min", -180) * TO_RAD);
+    this->forceSet(&SCAN_ANGLE_MAX, this->declare_parameter("rfans.scan.angle_max",  180) * TO_RAD);
+    const bool POINTS_PUBLISH = this->declare_parameter("rfans.points.publish", false);
+    const bool POINTS_NEAR_PUBLISH = this->declare_parameter("rfans.points.near_publish" false);
+    this->forceSet(&POINST_NEAR_RANGE, this->declare_parameter("rfans.points.near_range", 50.0));
+    bool DEPTH_IMG_PUBLISH = this->declare_parameter("rfans.img.depth_publish", false);
+    bool INTENSITY_IMG_PUBLISH = this->declare_parameter("rfans.img.intensity_publish", false);
+    const double OFFSET_LINEAR_X = this->declare_parameter("rfans.offset.linear.x", 0.0);
+    const double OFFSET_LINEAR_Y = this->declare_parameter("rfans.offset.linear.y", 0.0);
+    const double OFFSET_LINEAR_Z = this->declare_parameter("rfans.offset.linear.z", 0.0);
+    const double OFFSET_ANGULAR_X = this->declare_parameter("rfans.offset.angular.x", 0.0);
+    const double OFFSET_ANGULAR_Y = this->declare_parameter("rfans.offset.angular.y", 0.0);
+    const double OFFSET_ANGULAR_Z = this->declare_parameter("rfans.offset.angular.z", 0.0);
     RCLCPP_INFO(this->get_logger(), "Complete! Parameters were initialized.");
 
     // Initialize lidar
     RCLCPP_INFO(this->get_logger(), "Initialize lidar...");
+    this->rfans = std::make_shared<MiYALAB::Sensor::RFansDriver>(IP_ADDRESS, STATUS_PORT, MODEL_NAME);
     RCLCPP_INFO(this->get_logger(), "Complete! lidar was initialized.");
 
     // Initialize subscriber
@@ -72,6 +94,8 @@ RFansLiDAR::RFansLiDAR(rclcpp::NodeOptions options) : rclcpp::Node("node_name", 
  */
 RFansLiDAR::~RFansLiDAR()
 {
+    this->rfans->scanStop();
+    this->rfans = nullptr;
     this->thread.release();
 }
 

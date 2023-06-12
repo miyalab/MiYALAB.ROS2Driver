@@ -43,7 +43,7 @@ namespace ROS2{
  * 
  * @param options 
  */
-RPLiDAR::RPLiDAR(rclcpp::NodeOptions options) : rclcpp::Node("node_name", options)
+RPLiDAR::RPLiDAR(rclcpp::NodeOptions options) : rclcpp::Node("rplidar", options)
 {
     // Using placeholders
     using std::placeholders::_1;
