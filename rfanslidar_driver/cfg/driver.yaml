@@ -1,0 +1,9 @@
+rfans:
+  frame_id: "rfans"
+  model_name : "R-Fans-16"
+  ip_address : "192.168.0.3"
+  status_port: 2030
+  scan_freq: 20
+  # scan_freq: 10
+  # scan_freq: 5
+  # scan_freq: 0
