@@ -1,9 +1,26 @@
 rfans:
   frame_id: "rfans"
-  model_name : "R-Fans-16"
-  ip_address : "192.168.0.3"
-  status_port: 2030
-  scan_freq: 20
-  # scan_freq: 10
-  # scan_freq: 5
-  # scan_freq: 0
+  device:
+    model : "R-Fans-16"
+    ip_address : "192.168.0.3"
+    status_port: 2030
+  scan:
+    rate: 20              # 20 or 10 or 5 or 0
+    angle_min: -180.0
+    angle_max:  180.0
+  points:
+    publish: false
+    near_poins_range: 50.0
+    near_points_publish: false
+  img:
+    depth_publish    : false
+    intensity_publish: false
+  offset:
+    linear:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    angular:
+      x: 0.0
+      y: 0.0
+      z: 0.0

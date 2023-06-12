@@ -7,7 +7,7 @@
       },
       "includePath": [
         "${workspaceFolder}/**",
-        "${workspaceFolder}/rfans_driver/include/**",
+        "${workspaceFolder}/rfanslidar_driver/include/**",
         "${workspaceFolder}/rplidar_driver/include/**",
         "${workspaceFolder}/rplidar_driver/lib/include/**",
         "${workspaceFolder}/rplidar_driver/lib/src/**",
