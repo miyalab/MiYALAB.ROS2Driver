@@ -7,7 +7,7 @@ SureStar社製LiDAR R-FansシリーズのROS2ドライバ
 - OpenCV
 - MiYALAB.Cpp https://github.com/miyalab/MiYALAB.Cpp
 
-使用するにはlib/RFansLiDARディレクトリ内のCMakeでbuildしてから，colcon等でbuildしてください．
+使用するにはlib/RFansLiDARディレクトリ内のCMakeでinstall(sudo make install)してから，colcon等でbuildしてください．
 
 # component node
 ## MiYALAB::ROS2::RFansLiDAR
