@@ -325,7 +325,7 @@ void RPLiDAR::run()
             if(angle_compensate_multiple){
                 const int angle_compensate_nodes_count = 360 * angle_compensate_multiple;
                 int angle_compensate_offset = 0;
-                sl_lidar_response_measurement_node_hq_t *angle_compensate_nodes = new sl_lidar_response_measurement_node_hq_t[angle_compensate_nodes_count];
+                sl_lidar_response_measurement_node_hq_t angle_compensate_nodes[angle_compensate_nodes_count];
                 memset(angle_compensate_nodes, 0, angle_compensate_nodes_count*sizeof(sl_lidar_response_measurement_node_hq_t));
 
                 for(size_t i=0; i<count; i++){
@@ -348,7 +348,6 @@ void RPLiDAR::run()
                     angle_min, angle_max, 
                     max_distance
                 );
-                delete angle_compensate_nodes;
             }
             else{
                 int start_node = 0, end_node = 0;
