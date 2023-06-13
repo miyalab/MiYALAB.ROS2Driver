@@ -59,7 +59,7 @@ LiDARから得られた点群データを横軸水平角度，縦軸垂直角度
     topic(~/depth_img)の有効化
     - intensity_publish  
     topic(~/intensity_img)の有効化
-    - theta_resolution
+    - theta_resolution  
     画像横方向1 pixelあたりの角度分解能
     - phi_resolution  
     画像縦方向1 pixelあたりの角度分解能
