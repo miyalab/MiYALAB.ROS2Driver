@@ -65,7 +65,7 @@ LiDARから得られた点群データを横軸水平角度，縦軸垂直角度
     画像縦方向1 pixelあたりの角度分解能
   - offset
     - linear
-      - x
+      - x  
       LiDARの設置X座標
       - y  
       LiDARの設置Y座標
