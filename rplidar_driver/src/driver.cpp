@@ -20,14 +20,9 @@
 //-----------------------------
 constexpr double TO_RAD = M_PI / 180;
 
-//-----------------------------
-// enum
-//-----------------------------
-enum {
-    LIDAR_A_SERIES_MINUM_MAJOR_ID = 0,
-    LIDAR_S_SERIES_MINUM_MAJOR_ID = 5,
-    LIDAR_T_SERIES_MINUM_MAJOR_ID = 8,
-};
+constexpr int LIDAR_A_SERIES_MINUM_MAJOR_ID = 0;
+constexpr int LIDAR_S_SERIES_MINUM_MAJOR_ID = 5;
+constexpr int LIDAR_T_SERIES_MINUM_MAJOR_ID = 8;
 
 //-----------------------------
 // Methods

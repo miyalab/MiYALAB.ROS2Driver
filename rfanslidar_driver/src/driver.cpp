@@ -90,10 +90,6 @@ RFansLiDAR::RFansLiDAR(rclcpp::NodeOptions options) : rclcpp::Node("rfans_lidar"
     }
     RCLCPP_INFO(this->get_logger(), "Complete! lidar was initialized.");
 
-    // Initialize subscriber
-    // RCLCPP_INFO(this->get_logger(), "Initialize subscribers...");
-    // RCLCPP_INFO(this->get_logger(), "Complete! Subscribers were initialized.");
-
     // Initialize publisher
     RCLCPP_INFO(this->get_logger(), "Initialize publishers...");
     if(POINTS_PUBLISH)        this->points_publisher = this->create_publisher<PointCloud>("~/points", 10);
@@ -105,10 +101,6 @@ RFansLiDAR::RFansLiDAR(rclcpp::NodeOptions options) : rclcpp::Node("rfans_lidar"
     // Initialize Service-Server
     // RCLCPP_INFO(this->get_logger(), "Initialize service-servers...");
     // RCLCPP_INFO(this->get_logger(), "Complete! Service-servers were initialized.");
-
-    // Initialize Service-Client 
-    // RCLCPP_INFO(this->get_logger(), "Initialize service-clients...");
-    // RCLCPP_INFO(this->get_logger(), "Complete! Service-clients were initialized.");
 
     // Main loop processing
     this->thread = std::make_unique<std::thread>(&RFansLiDAR::run, this);
@@ -171,12 +163,12 @@ void RFansLiDAR::run()
         if(this->depth_img_publisher.get()){
             depth_img.header = header;
             depth_img.encoding = sensor_msgs::image_encodings::TYPE_32FC1;
-            depth_img.image = cv::Mat(img_size, CV_32FC1, cv::Scalar(-1.0));
+            depth_img.image = cv::Mat(img_size, CV_32FC1, cv::Scalar(-1.0f));
         }
         if(this->intensity_img_publisher.get()){
             intensity_img.header = header;
             intensity_img.encoding = sensor_msgs::image_encodings::TYPE_32FC1;
-            intensity_img.image = cv::Mat(img_size, CV_32FC1, cv::Scalar(-1.0));
+            intensity_img.image = cv::Mat(img_size, CV_32FC1, cv::Scalar(-1.0f));
         }
 
         for(int i=0, size=polars.polars.size(); i<size; i++){
@@ -185,12 +177,17 @@ void RFansLiDAR::run()
             if(polars.polars[i].phi < this->SCAN_PHI_MIN || this->SCAN_PHI_MAX < polars.polars[i].phi) continue;
 
             if(points_publish){
-                double phi = polars.polars[i].phi + this->OFFSET_ANGULAR_Y;
-                double theta = polars.polars[i].theta + this->OFFSET_ANGULAR_Z;
+                const double phi = polars.polars[i].phi + this->OFFSET_ANGULAR_Y;
+                const double theta = polars.polars[i].theta + this->OFFSET_ANGULAR_Z;
                 geometry_msgs::msg::Point32 point;
-                point.x = polars.polars[i].range * std::cos(phi) * std::cos(theta);
-                point.y = polars.polars[i].range * std::cos(phi) * std::sin(theta);
-                point.z = polars.polars[i].range * std::sin(phi);
+                
+                point.x = polars.polars[i].range * std::cos(phi) * std::cos(theta) + this->OFFSET_LINEAR_X;
+                const double y = polars.polars[i].range * std::cos(phi) * std::sin(theta);
+                const double z = polars.polars[i].range * std::sin(phi);
+                const double cos_x = std::cos(this->OFFSET_ANGULAR_X);
+                const double sin_x = std::sin(this->OFFSET_ANGULAR_X);
+                point.y = y * cos_x - z * sin_x + this->OFFSET_LINEAR_Y;
+                point.z = y * sin_x + z * cos_x + this->OFFSET_LINEAR_Z;
 
                 if(this->points_publisher.get()){
                     points_msg->points.emplace_back(point);
@@ -202,8 +199,8 @@ void RFansLiDAR::run()
                 }
             }
             if(img_publish){
-                int px = img_size.width - (polars.polars[i].theta - this->SCAN_THETA_MIN) / this->IMG_THETA_RESOLUTION;
-                int py = img_size.height - (polars.polars[i].phi - this->SCAN_PHI_MIN) / this->IMG_PHI_RESOLUTION;
+                const int px = img_size.width - (polars.polars[i].theta - this->SCAN_THETA_MIN) / this->IMG_THETA_RESOLUTION;
+                const int py = img_size.height - (polars.polars[i].phi - this->SCAN_PHI_MIN) / this->IMG_PHI_RESOLUTION;
 
                 if(0<=px && px<img_size.width && 0<=py && py<img_size.height){
                     if(this->depth_img_publisher.get())     depth_img.image.at<float>(py, px) = polars.polars[i].range;

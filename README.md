@@ -1,2 +1,2 @@
-# MiYALAB.ROS2SensorDriver
-This repository is sensor driver for ROS2
+# MiYALAB.ROS2Driver
+This repository is hardware driver for ROS2
