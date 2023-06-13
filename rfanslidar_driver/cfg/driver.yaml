@@ -10,8 +10,8 @@ rfans:
       min: -180.0
       max:  180.0
     phi:
-      min: -15.0
-      max:  15.0
+      min: -16.0
+      max:  16.0
   points:
     publish: true
     near_range: 20.0
@@ -19,7 +19,7 @@ rfans:
   img:
     depth_publish    : true
     intensity_publish: true
-    theta_resolution : 0.36
+    theta_resolution : 0.72
     phi_resolution   : 2.0
   offset:
     linear:

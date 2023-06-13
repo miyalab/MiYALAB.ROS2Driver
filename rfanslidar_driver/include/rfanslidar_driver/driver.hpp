@@ -49,7 +49,7 @@ private:
     const std::string FRAME_ID = "";
     const double SCAN_THETA_MIN = -M_PI;
     const double SCAN_THETA_MAX =  M_PI;
-    const double SCAN_PHI_MIN   =  M_PI;
+    const double SCAN_PHI_MIN   = -M_PI;
     const double SCAN_PHI_MAX   =  M_PI;
     const double POINTS_NEAR_RANGE = 50;
     const double OFFSET_LINEAR_X = 0.0;
