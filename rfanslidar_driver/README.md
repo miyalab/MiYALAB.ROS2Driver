@@ -18,8 +18,8 @@ LiDARから得られる点群データ
 - ~/points_near(sensor_msgs::msg::PointCloud)  
 LiDARから得られた点群データで，パラメータ"rfans.points.near_range"で設定された値より距離が小さい点群データ
 
-- ~/depth_img (sensor_msgs::msg::Image)  
-LiDARから得られた点群データを横軸水平角度，縦軸垂直角度で画素(float型1チャンネル)に距離を格納した画像データ
+- \~/depth_img (sensor_msgs::msg::Image)  
+LiDARから得られた点群データを横軸水平角度，縦軸垂直角度で画素(float型1チャンネル)に距離(0\~200.0)を格納した画像データ
 
 - \~/intensity_img (sensor_msgs::msg::Image)  
 LiDARから得られた点群データを横軸水平角度，縦軸垂直角度で画素(float型1チャンネル)に反射強度(0\~1.0)を格納した画像データ
