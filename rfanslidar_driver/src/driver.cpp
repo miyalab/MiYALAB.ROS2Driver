@@ -162,7 +162,7 @@ void RFansLiDAR::imagePublish(const std_msgs::msg::Header &header, const MiYALAB
     cv_bridge::CvImage depth_img;
     cv_bridge::CvImage intensity_img;
     depth_img.header = intensity_img.header = header;
-    depth_img.encoding = intensity_img.encoding = CV_32FC1;
+    depth_img.encoding = intensity_img.encoding = sensor_msgs::image_encodings::TYPE_32FC1;
     depth_img.image     = cv::Mat(this->IMG_SIZE, CV_32FC1, cv::Scalar(-1.0f));
     intensity_img.image = cv::Mat(this->IMG_SIZE, CV_32FC1, cv::Scalar(-1.0f));
 

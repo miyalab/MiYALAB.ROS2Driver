@@ -60,9 +60,9 @@ LiDARから得られた点群データを横軸水平角度，縦軸垂直角度
     - intensity_publish  
     topic(~/intensity_img)の有効化
     - theta_resolution  
-    画像横方向1 pixelあたりの角度分解能
+    Depth img およびIntensity imgの横方向1 pixelあたりの角度分解能
     - phi_resolution  
-    画像縦方向1 pixelあたりの角度分解能
+    Depth img およびIntensity imgの縦方向1 pixelあたりの角度分解能
   - offset
     - linear
       - x  
