@@ -79,6 +79,8 @@ RFansLiDAR::RFansLiDAR(rclcpp::NodeOptions options) : rclcpp::Node("rfans_lidar"
     this->forceSet(&this->OFFSET_ANGULAR_Z, this->declare_parameter("rfans.offset.angular.z", 0.0) * TO_RAD);
     this->forceSet(&this->IMG_THETA_RESOLUTION, this->declare_parameter("rfans.img.theta_resolution", 0.36) * TO_RAD);
     this->forceSet(&this->IMG_PHI_RESOLUTION, this->declare_parameter("rfans.img.phi_resolution", 2.0) * TO_RAD);
+    this->forceSet(&this->IMG_SIZE.width, (this->SCAN_THETA_MAX - this->SCAN_THETA_MIN) / this->IMG_THETA_RESOLUTION);
+    this->forceSet(&this->IMG_SIZE.height, (this->SCAN_PHI_MAX - this->SCAN_PHI_MIN) / this->IMG_PHI_RESOLUTION);
     RCLCPP_INFO(this->get_logger(), "Complete! Parameters were initialized.");
 
     // Initialize lidar
@@ -118,6 +120,74 @@ RFansLiDAR::~RFansLiDAR()
     this->thread.release();
 }
 
+
+void RFansLiDAR::pointsPublish(const std_msgs::msg::Header &header, const MiYALAB::Sensor::PointCloudPolar &polars)
+{
+    auto points_msg = std::make_unique<PointCloud>();
+    auto points_near_msg = std::make_unique<PointCloud>();
+    points_msg->channels.resize(1);
+    points_near_msg->channels.resize(1);
+    points_msg->channels[0].name = points_near_msg->channels[0].name = "intensity";
+
+    points_msg->header = points_near_msg->header = header;
+    for(int i=0, size=polars.polars.size(); i<size; i++){
+        const double phi = polars.polars[i].phi + this->OFFSET_ANGULAR_Y;
+        const double theta = polars.polars[i].theta + this->OFFSET_ANGULAR_Z;
+        geometry_msgs::msg::Point32 point;
+        
+        const double cos_phi = std::cos(phi);
+        point.x = polars.polars[i].range * cos_phi * std::cos(theta) + this->OFFSET_LINEAR_X;
+        const double y = polars.polars[i].range * cos_phi * std::sin(theta);
+        const double z = polars.polars[i].range * std::sin(phi);
+        const double cos_x = std::cos(this->OFFSET_ANGULAR_X);
+        const double sin_x = std::sin(this->OFFSET_ANGULAR_X);
+        point.y = y * cos_x - z * sin_x + this->OFFSET_LINEAR_Y;
+        point.z = y * sin_x + z * cos_x + this->OFFSET_LINEAR_Z;
+
+        if(this->points_publisher.get()){
+            points_msg->points.emplace_back(point);
+            points_msg->channels[0].values.emplace_back(polars.intensity[i]);
+        }
+        if(this->points_near_publisher.get()){
+            points_msg->points.emplace_back(point);
+            points_msg->channels[0].values.emplace_back(polars.intensity[i]);
+        }
+    }
+    if(this->points_publisher.get()) this->points_publisher->publish(std::move(points_msg));
+    if(this->points_near_publisher.get()) this->points_near_publisher->publish(std::move(points_near_msg));
+}
+
+void RFansLiDAR::imagePublish(const std_msgs::msg::Header &header, const MiYALAB::Sensor::PointCloudPolar &polars)
+{
+    cv_bridge::CvImage depth_img;
+    cv_bridge::CvImage intensity_img;
+    depth_img.header = intensity_img.header = header;
+    depth_img.encoding = intensity_img.encoding = CV_32FC1;
+    depth_img.image     = cv::Mat(this->IMG_SIZE, CV_32FC1, cv::Scalar(-1.0f));
+    intensity_img.image = cv::Mat(this->IMG_SIZE, CV_32FC1, cv::Scalar(-1.0f));
+
+    for(int i=0, size=polars.polars.size(); i<size; i++){
+        const int px = this->IMG_SIZE.width - (polars.polars[i].theta - this->SCAN_THETA_MIN) / this->IMG_THETA_RESOLUTION;
+        const int py = this->IMG_SIZE.height - (polars.polars[i].phi - this->SCAN_PHI_MIN) / this->IMG_PHI_RESOLUTION;
+
+        if(0<=px && px<this->IMG_SIZE.width && 0<=py && py<this->IMG_SIZE.height){
+            if(this->depth_img_publisher.get())     depth_img.image.at<float>(py, px) = polars.polars[i].range;
+            if(this->intensity_img_publisher.get()) intensity_img.image.at<float>(py, px) = polars.intensity[i];
+        }
+    }
+
+    if(this->depth_img_publisher.get()){
+        auto depth_img_msg = std::make_unique<Image>();
+        depth_img.toImageMsg(*depth_img_msg);
+        this->depth_img_publisher->publish(std::move(depth_img_msg));
+    }
+    if(this->intensity_img_publisher.get()){
+        auto intensity_img_msg = std::make_unique<Image>();
+        intensity_img.toImageMsg(*intensity_img_msg);
+        this->intensity_img_publisher->publish(std::move(intensity_img_msg));
+    }
+}
+
 /**
  * @brief Execute method
  * 
@@ -126,19 +196,8 @@ void RFansLiDAR::run()
 {
     RCLCPP_INFO_STREAM(this->get_logger(), this->get_name() << " has started. thread id = " << std::this_thread::get_id());
     
-    cv::Size img_size(
-        (this->SCAN_THETA_MAX - this->SCAN_THETA_MIN) / this->IMG_THETA_RESOLUTION,
-        (this->SCAN_PHI_MAX - this->SCAN_PHI_MIN) / this->IMG_PHI_RESOLUTION
-    );
-    RCLCPP_INFO_STREAM(this->get_logger(), img_size);
-    cv_bridge::CvImage depth_img;
-    cv_bridge::CvImage intensity_img;
-    PointCloud::UniquePtr points_msg;
-    PointCloud::UniquePtr points_near_msg;
-    Image::UniquePtr depth_img_msg;
-    Image::UniquePtr intensity_img_msg;
     const bool points_publish = (this->points_publisher.get() != nullptr) || (this->points_near_publisher.get() != nullptr);
-    const bool img_publish    = (this->depth_img_publisher.get() != nullptr) || (this->intensity_img_publisher.get() != nullptr);
+    const bool image_publish  = (this->depth_img_publisher.get() != nullptr) || (this->intensity_img_publisher.get() != nullptr);
 
     // Main loop
     for(rclcpp::WallRate loop(this->SCAN_RATE); rclcpp::ok(); loop.sleep()){
@@ -148,81 +207,12 @@ void RFansLiDAR::run()
         header.stamp = this->now();
         this->rfans->getPoints(&polars);
 
-        if(this->points_publisher.get()){
-            points_msg = std::make_unique<PointCloud>();
-            points_msg->header = header;
-            points_msg->channels.resize(1);
-            points_msg->channels[0].name = "intensity";
-        }
-        if(this->points_near_publisher.get()){
-            points_near_msg = std::make_unique<PointCloud>();
-            points_near_msg->header = header;
-            points_near_msg->channels.resize(1);
-            points_near_msg->channels[0].name = "intensity";
-        }
-        if(this->depth_img_publisher.get()){
-            depth_img.header = header;
-            depth_img.encoding = sensor_msgs::image_encodings::TYPE_32FC1;
-            depth_img.image = cv::Mat(img_size, CV_32FC1, cv::Scalar(-1.0f));
-        }
-        if(this->intensity_img_publisher.get()){
-            intensity_img.header = header;
-            intensity_img.encoding = sensor_msgs::image_encodings::TYPE_32FC1;
-            intensity_img.image = cv::Mat(img_size, CV_32FC1, cv::Scalar(-1.0f));
-        }
-
-        for(int i=0, size=polars.polars.size(); i<size; i++){
-            if(polars.polars[i].range < 0.1) continue;
-            if(polars.polars[i].theta < this->SCAN_THETA_MIN || this->SCAN_THETA_MAX < polars.polars[i].theta) continue;
-            if(polars.polars[i].phi < this->SCAN_PHI_MIN || this->SCAN_PHI_MAX < polars.polars[i].phi) continue;
-
-            if(points_publish){
-                const double phi = polars.polars[i].phi + this->OFFSET_ANGULAR_Y;
-                const double theta = polars.polars[i].theta + this->OFFSET_ANGULAR_Z;
-                geometry_msgs::msg::Point32 point;
-                
-                const double cos_phi = std::cos(phi);
-                point.x = polars.polars[i].range * cos_phi * std::cos(theta) + this->OFFSET_LINEAR_X;
-                const double y = polars.polars[i].range * cos_phi * std::sin(theta);
-                const double z = polars.polars[i].range * std::sin(phi);
-                const double cos_x = std::cos(this->OFFSET_ANGULAR_X);
-                const double sin_x = std::sin(this->OFFSET_ANGULAR_X);
-                point.y = y * cos_x - z * sin_x + this->OFFSET_LINEAR_Y;
-                point.z = y * sin_x + z * cos_x + this->OFFSET_LINEAR_Z;
-
-                if(this->points_publisher.get()){
-                    points_msg->points.emplace_back(point);
-                    points_msg->channels[0].values.emplace_back(polars.intensity[i]);
-                }
-                if(this->points_near_publisher.get() && polars.polars[i].range < this->POINTS_NEAR_RANGE){
-                    points_near_msg->points.emplace_back(point);
-                    points_near_msg->channels[0].values.emplace_back(polars.intensity[i]);
-                }
-            }
-            if(img_publish){
-                const int px = img_size.width - (polars.polars[i].theta - this->SCAN_THETA_MIN) / this->IMG_THETA_RESOLUTION;
-                const int py = img_size.height - (polars.polars[i].phi - this->SCAN_PHI_MIN) / this->IMG_PHI_RESOLUTION;
-
-                if(0<=px && px<img_size.width && 0<=py && py<img_size.height){
-                    if(this->depth_img_publisher.get())     depth_img.image.at<float>(py, px) = polars.polars[i].range;
-                    if(this->intensity_img_publisher.get()) intensity_img.image.at<float>(py, px) = polars.intensity[i];
-                }
-            }
-        }
-        
-
-        if(this->points_publisher.get())      this->points_publisher->publish(std::move(points_msg));
-        if(this->points_near_publisher.get()) this->points_near_publisher->publish(std::move(points_near_msg));
-        if(this->depth_img_publisher.get()){
-            depth_img_msg = std::make_unique<Image>();
-            depth_img.toImageMsg(*depth_img_msg);
-            this->depth_img_publisher->publish(std::move(depth_img_msg));
-        }
-        if(this->intensity_img_publisher.get()){
-            intensity_img_msg = std::make_unique<Image>();
-            intensity_img.toImageMsg(*intensity_img_msg);
-            this->intensity_img_publisher->publish(std::move(intensity_img_msg));
-        }
+        std::thread points_thread;
+        std::thread image_thread;
+        if(points_publish) points_thread = std::thread(&RFansLiDAR::pointsPublish, this, header, polars);
+        if(image_publish)  image_thread = std::thread(&RFansLiDAR::imagePublish, this, header, polars);
+        if(points_publish) points_thread.join();
+        if(image_publish)  image_thread.join();
     }
     RCLCPP_INFO(this->get_logger(), "%s has stoped.", this->get_name());
 }

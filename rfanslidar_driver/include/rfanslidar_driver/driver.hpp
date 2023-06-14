@@ -59,8 +59,12 @@ private:
     const double OFFSET_ANGULAR_Y = 0.0;
     const double OFFSET_ANGULAR_Z = 0.0;
     const double IMG_THETA_RESOLUTION = 0.36;
-    const double IMG_PHI_RESOLUTION = 2.0; 
+    const double IMG_PHI_RESOLUTION = 2.0;
+    const cv::Size IMG_SIZE = {0,0};
     template<typename T, typename U> static void forceSet(const T *value, const U &set_value){*((T*)value) = set_value;}
+
+    void pointsPublish(const std_msgs::msg::Header &header, const MiYALAB::Sensor::PointCloudPolar &polar);
+    void imagePublish(const std_msgs::msg::Header &header, const MiYALAB::Sensor::PointCloudPolar &polar);
 
     std::shared_ptr<MiYALAB::Sensor::RFansDriver> rfans;
     std::unique_ptr<std::thread> thread;
