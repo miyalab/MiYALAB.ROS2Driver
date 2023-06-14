@@ -134,7 +134,7 @@ void RFansLiDAR::run()
     cv_bridge::CvImage depth_img;
     cv_bridge::CvImage intensity_img;
     PointCloud::UniquePtr points_msg;
-    PointCloud::UniquePtr points_near_msg;;
+    PointCloud::UniquePtr points_near_msg;
     Image::UniquePtr depth_img_msg;
     Image::UniquePtr intensity_img_msg;
     const bool points_publish = (this->points_publisher.get() != nullptr) || (this->points_near_publisher.get() != nullptr);
@@ -181,8 +181,9 @@ void RFansLiDAR::run()
                 const double theta = polars.polars[i].theta + this->OFFSET_ANGULAR_Z;
                 geometry_msgs::msg::Point32 point;
                 
-                point.x = polars.polars[i].range * std::cos(phi) * std::cos(theta) + this->OFFSET_LINEAR_X;
-                const double y = polars.polars[i].range * std::cos(phi) * std::sin(theta);
+                const double cos_phi = std::cos(phi);
+                point.x = polars.polars[i].range * cos_phi * std::cos(theta) + this->OFFSET_LINEAR_X;
+                const double y = polars.polars[i].range * cos_phi * std::sin(theta);
                 const double z = polars.polars[i].range * std::sin(phi);
                 const double cos_x = std::cos(this->OFFSET_ANGULAR_X);
                 const double sin_x = std::sin(this->OFFSET_ANGULAR_X);
