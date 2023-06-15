@@ -40,10 +40,10 @@ public:
     RFansLiDAR(rclcpp::NodeOptions options = rclcpp::NodeOptions());
     ~RFansLiDAR();
 private:
-    rclcpp::Publisher<sensor_msgs::msg::PointCloud>::SharedPtr points_publisher;
-    rclcpp::Publisher<sensor_msgs::msg::PointCloud>::SharedPtr points_near_publisher;
-    rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr depth_img_publisher;
-    rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr intensity_img_publisher;
+    rclcpp::Publisher<sensor_msgs::msg::PointCloud>::SharedPtr points_publisher = nullptr;
+    rclcpp::Publisher<sensor_msgs::msg::PointCloud>::SharedPtr points_near_publisher = nullptr;
+    rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr depth_img_publisher = nullptr;
+    rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr intensity_img_publisher = nullptr;
 
     const int SCAN_RATE = 20;
     const std::string FRAME_ID = "";
@@ -66,7 +66,7 @@ private:
     void pointsPublish(const std_msgs::msg::Header &header, const MiYALAB::Sensor::PointCloudPolar &polar);
     void imagePublish(const std_msgs::msg::Header &header, const MiYALAB::Sensor::PointCloudPolar &polar);
 
-    std::shared_ptr<MiYALAB::Sensor::RFansDriver> rfans;
+    std::shared_ptr<MiYALAB::Sensor::RFansDriver> rfans = nullptr;
     std::unique_ptr<std::thread> thread;
     void run();
 };

@@ -120,7 +120,6 @@ RFansLiDAR::~RFansLiDAR()
     this->thread.release();
 }
 
-
 void RFansLiDAR::pointsPublish(const std_msgs::msg::Header &header, const MiYALAB::Sensor::PointCloudPolar &polars)
 {
     auto points_msg = std::make_unique<PointCloud>();
