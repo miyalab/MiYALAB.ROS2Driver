@@ -63,8 +63,8 @@ private:
     const cv::Size IMG_SIZE = {0,0};
     template<typename T, typename U> static void forceSet(const T *value, const U &set_value){*((T*)value) = set_value;}
 
-    void pointsPublish(const std_msgs::msg::Header &header, const MiYALAB::Sensor::PointCloudPolar &polar);
-    void imagePublish(const std_msgs::msg::Header &header, const MiYALAB::Sensor::PointCloudPolar &polar);
+    void pointsPublish(const std_msgs::msg::Header &header, const MiYALAB::Sensor::PointCloudPolar &polars);
+    void imagePublish(const std_msgs::msg::Header &header, const MiYALAB::Sensor::PointCloudPolar &polars);
 
     std::shared_ptr<MiYALAB::Sensor::RFansDriver> rfans = nullptr;
     std::unique_ptr<std::thread> thread;

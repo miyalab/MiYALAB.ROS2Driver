@@ -126,9 +126,9 @@ void RFansLiDAR::pointsPublish(const std_msgs::msg::Header &header, const MiYALA
     auto points_near_msg = std::make_unique<PointCloud>();
     points_msg->channels.resize(1);
     points_near_msg->channels.resize(1);
+    points_msg->header = points_near_msg->header = header;
     points_msg->channels[0].name = points_near_msg->channels[0].name = "intensity";
 
-    points_msg->header = points_near_msg->header = header;
     for(int i=0, size=polars.polars.size(); i<size; i++){
         const double phi = polars.polars[i].phi + this->OFFSET_ANGULAR_Y;
         const double theta = polars.polars[i].theta + this->OFFSET_ANGULAR_Z;
@@ -148,8 +148,8 @@ void RFansLiDAR::pointsPublish(const std_msgs::msg::Header &header, const MiYALA
             points_msg->channels[0].values.emplace_back(polars.intensity[i]);
         }
         if(this->points_near_publisher.get()){
-            points_msg->points.emplace_back(point);
-            points_msg->channels[0].values.emplace_back(polars.intensity[i]);
+            points_near_msg->points.emplace_back(point);
+            points_near_msg->channels[0].values.emplace_back(polars.intensity[i]);
         }
     }
     if(this->points_publisher.get()) this->points_publisher->publish(std::move(points_msg));
@@ -165,13 +165,52 @@ void RFansLiDAR::imagePublish(const std_msgs::msg::Header &header, const MiYALAB
     depth_img.image     = cv::Mat(this->IMG_SIZE, CV_32FC1, cv::Scalar(-1.0f));
     intensity_img.image = cv::Mat(this->IMG_SIZE, CV_32FC1, cv::Scalar(-1.0f));
 
+    std::vector<std::vector<float>> depth(this->IMG_SIZE.height, std::vector<float>(this->IMG_SIZE.width, -1.0f));
+    std::vector<std::vector<float>> intensity(this->IMG_SIZE.height, std::vector<float>(this->IMG_SIZE.width, -1.0f));
     for(int i=0, size=polars.polars.size(); i<size; i++){
         const int px = this->IMG_SIZE.width - (polars.polars[i].theta - this->SCAN_THETA_MIN) / this->IMG_THETA_RESOLUTION;
         const int py = this->IMG_SIZE.height - (polars.polars[i].phi - this->SCAN_PHI_MIN) / this->IMG_PHI_RESOLUTION;
-
         if(0<=px && px<this->IMG_SIZE.width && 0<=py && py<this->IMG_SIZE.height){
-            if(this->depth_img_publisher.get())     depth_img.image.at<float>(py, px) = polars.polars[i].range;
-            if(this->intensity_img_publisher.get()) intensity_img.image.at<float>(py, px) = polars.intensity[i];
+            depth[py][px] = polars.polars[i].range;
+            intensity[py][px] = polars.intensity[i];
+        }
+    }
+
+    // スムージング処理
+    for(int y=0; y<this->IMG_SIZE.height; y++){
+        auto depth_img_ptr = &depth_img.image.at<float>(y,0);
+        auto intensity_img_ptr = &intensity_img.image.at<float>(y,0);
+        for(int x=0; x<this->IMG_SIZE.width; x++){
+            // データ欠如箇所は周辺画素の平均値
+            if(depth[y][x] < 0){
+                int cnt = 0;
+                float depth_sum = 0;
+                float intensity_sum = 0;
+                for(int j=y-1; j<=y+1; j++){
+                    if(j<0 || this->IMG_SIZE.height<=j) continue;
+                    for(int i=x-1; i<=x+1; i++){
+                        if(i<0 || this->IMG_SIZE.width<=i) continue; 
+                        if(depth[j][i]>=0){
+                            depth_sum += depth[j][i];
+                            intensity_sum += intensity[j][i];
+                            cnt++;
+                        }
+                    }
+                }
+                if(cnt){
+                    depth_img_ptr[x] = depth_sum/cnt;
+                    intensity_img_ptr[x] = intensity_sum/cnt;
+                }
+                else{
+                    depth_img_ptr[x] = -1.0f;
+                    intensity_img_ptr[x] = -1.0f;
+                }
+            }
+            // データがあるときはそのままコピー
+            else{
+                depth_img_ptr[x] = depth[y][x];
+                intensity_img_ptr[x] = intensity[y][x];
+            }
         }
     }
 
