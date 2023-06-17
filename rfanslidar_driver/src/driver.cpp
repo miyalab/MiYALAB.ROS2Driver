@@ -168,6 +168,9 @@ void RFansLiDAR::imagePublish(const std_msgs::msg::Header &header, const MiYALAB
     std::vector<std::vector<float>> depth(this->IMG_SIZE.height, std::vector<float>(this->IMG_SIZE.width, -1.0f));
     std::vector<std::vector<float>> intensity(this->IMG_SIZE.height, std::vector<float>(this->IMG_SIZE.width, -1.0f));
     for(int i=0, size=polars.polars.size(); i<size; i++){
+        double theta = polars.polars[i].theta + this->OFFSET_ANGULAR_Z;
+        if(theta > M_PI) theta -= 2*M_PI;
+        if(theta < M_PI) theta += 2*M_PI;
         const int px = this->IMG_SIZE.width - (polars.polars[i].theta - this->SCAN_THETA_MIN) / this->IMG_THETA_RESOLUTION;
         const int py = this->IMG_SIZE.height - (polars.polars[i].phi - this->SCAN_PHI_MIN) / this->IMG_PHI_RESOLUTION;
         if(0<=px && px<this->IMG_SIZE.width && 0<=py && py<this->IMG_SIZE.height){
