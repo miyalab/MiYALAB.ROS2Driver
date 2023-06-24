@@ -23,8 +23,8 @@ def generate_launch_description():
             ComposableNode(
                 package='rfanslidar_driver',
                 plugin='MiYALAB::ROS2::RFansLiDAR',
-                name='rfans32m',
-                parameters=[join(pkg_prefix, "cfg/rfan32m.yaml")],
+                name='rfans16m',
+                parameters=[join(pkg_prefix, "cfg/rfans16m.yaml")],
                 extra_arguments=[{'use_intra_process_comms': True}]
             )
         ]

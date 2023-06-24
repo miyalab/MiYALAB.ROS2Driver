@@ -24,7 +24,7 @@ def generate_launch_description():
                 package='rfanslidar_driver',
                 plugin='MiYALAB::ROS2::RFansLiDAR',
                 name='rfans16',
-                parameters=[join(pkg_prefix, "cfg/rfan16.yaml")],
+                parameters=[join(pkg_prefix, "cfg/rfans16.yaml")],
                 extra_arguments=[{'use_intra_process_comms': True}]
             )
         ]
