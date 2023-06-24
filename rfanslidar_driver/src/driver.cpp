@@ -124,10 +124,11 @@ void RFansLiDAR::pointsPublish(const std_msgs::msg::Header &header, const MiYALA
 {
     auto points_msg = std::make_unique<PointCloud>();
     auto points_near_msg = std::make_unique<PointCloud>();
-    points_msg->channels.resize(1);
-    points_near_msg->channels.resize(1);
+    points_msg->channels.resize(2);
+    points_near_msg->channels.resize(2);
     points_msg->header = points_near_msg->header = header;
-    points_msg->channels[0].name = points_near_msg->channels[0].name = "intensity";
+    points_msg->channels[0].name = points_near_msg->channels[0].name = "range";
+    points_msg->channels[1].name = points_near_msg->channels[1].name = "intensity";
 
     for(int i=0, size=polars.polars.size(); i<size; i++){
         const double phi = polars.polars[i].phi + this->OFFSET_ANGULAR_Y;
@@ -145,14 +146,16 @@ void RFansLiDAR::pointsPublish(const std_msgs::msg::Header &header, const MiYALA
 
         if(this->points_publisher.get()){
             points_msg->points.emplace_back(point);
-            points_msg->channels[0].values.emplace_back(polars.intensity[i]);
+            points_msg->channels[0].values.emplace_back(polars.polars[i].range);
+            points_msg->channels[1].values.emplace_back(polars.channels[0].values[i]);
         }
-        if(this->points_near_publisher.get()){
+        if(this->points_near_publisher.get() && polars.polars[i].range < this->POINTS_NEAR_RANGE){
             points_near_msg->points.emplace_back(point);
-            points_near_msg->channels[0].values.emplace_back(polars.intensity[i]);
+            points_near_msg->channels[0].values.emplace_back(polars.polars[i].range);
+            points_near_msg->channels[1].values.emplace_back(polars.channels[0].values[i]);
         }
     }
-    if(this->points_publisher.get()) this->points_publisher->publish(std::move(points_msg));
+    if(this->points_publisher.get())      this->points_publisher->publish(std::move(points_msg));
     if(this->points_near_publisher.get()) this->points_near_publisher->publish(std::move(points_near_msg));
 }
 
@@ -175,7 +178,7 @@ void RFansLiDAR::imagePublish(const std_msgs::msg::Header &header, const MiYALAB
         const int py = this->IMG_SIZE.height - (polars.polars[i].phi - this->SCAN_PHI_MIN) / this->IMG_PHI_RESOLUTION;
         if(0<=px && px<this->IMG_SIZE.width && 0<=py && py<this->IMG_SIZE.height){
             depth[py][px] = polars.polars[i].range;
-            intensity[py][px] = polars.intensity[i];
+            intensity[py][px] = polars.channels[0].values[i];
         }
     }
 

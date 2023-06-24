@@ -13,16 +13,16 @@ SureStar社製LiDAR R-FansシリーズのROS2ドライバ
 ## MiYALAB::ROS2::RFansLiDAR
 ### publisher
 - ~/points (sensor_msgs::msg::PointCloud)  
-LiDARから得られる点群データ(channel[0]に反射強度値が格納)
+LiDARから得られる点群データ(channel[0]にrange，channel[1]に反射強度値が格納)
 
 - ~/points_near(sensor_msgs::msg::PointCloud)  
-LiDARから得られた点群データで，パラメータ"rfans.points.near_range"で設定された値より距離が小さい点群データ(channel[0]に反射強度値が格納)
+LiDARから得られた点群データで，パラメータ"rfans.points.near_range"で設定された値より距離が小さい点群データ(channel[0]にrange，channel[1]に反射強度値が格納)
 
 - \~/depth_img (sensor_msgs::msg::Image)  
-LiDARから得られた点群データを横軸水平角度，縦軸垂直角度で画素(float型1チャンネル)に距離(0\~200.0)を格納した画像データ
+LiDARから得られた点群データを横軸水平角度，縦軸垂直角度で画素(float型1チャンネル)に距離(0\~200.0)を格納した画像データ（データなしの画素には-1.0が格納）
 
 - \~/intensity_img (sensor_msgs::msg::Image)  
-LiDARから得られた点群データを横軸水平角度，縦軸垂直角度で画素(float型1チャンネル)に反射強度(0\~1.0)を格納した画像データ
+LiDARから得られた点群データを横軸水平角度，縦軸垂直角度で画素(float型1チャンネル)に反射強度(0\~1.0)を格納した画像データ（データなしの画素には-1.0が格納）
 
 ### parameter
 - rfans:
