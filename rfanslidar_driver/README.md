@@ -7,7 +7,9 @@ SureStar社製LiDAR R-FansシリーズのROS2ドライバ
 - OpenCV
 - MiYALAB.Cpp https://github.com/miyalab/MiYALAB.Cpp
 
-使用するにはlib/RFansLiDARディレクトリ内のCMakeでinstall(sudo make install)してから，colcon等でbuildしてください．
+使用するにはlib/RFansLiDARディレクトリ内のCMakeでinstall(sudo make install)してから，colcon等でbuildしてください．  
+
+\*使用している座標系は右手系ですが，parameterの一部に特殊部分があります．注意してください．
 
 # component node
 ## MiYALAB::ROS2::RFansLiDAR
@@ -42,7 +44,7 @@ LiDARから得られた点群データを横軸水平角度，縦軸垂直角度
       最小水平方向スキャン角度
       - max  
       最大水平方向スキャン角度
-    - phi
+    - phi（X軸からZ軸方向が正）
       - min  
       最小垂直方向スキャン角度
       - max  
@@ -63,7 +65,7 @@ LiDARから得られた点群データを横軸水平角度，縦軸垂直角度
     Depth img およびIntensity imgの横方向1 pixelあたりの角度分解能
     - phi_resolution  
     Depth img およびIntensity imgの縦方向1 pixelあたりの角度分解能
-  - offset
+  - offset  
     - linear
       - x  
       LiDARの設置X座標
