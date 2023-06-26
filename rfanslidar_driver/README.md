@@ -9,8 +9,6 @@ SureStar社製LiDAR R-FansシリーズのROS2ドライバ
 
 使用するにはlib/RFansLiDARディレクトリ内のCMakeでinstall(sudo make install)してから，colcon等でbuildしてください．  
 
-\*使用している座標系は右手系ですが，parameterの一部に特殊部分があります．注意してください．
-
 # component node
 ## MiYALAB::ROS2::RFansLiDAR
 ### publisher
@@ -44,7 +42,7 @@ LiDARから得られた点群データを横軸水平角度，縦軸垂直角度
       最小水平方向スキャン角度
       - max  
       最大水平方向スキャン角度
-    - phi（X軸からZ軸方向が正）
+    - phi
       - min  
       最小垂直方向スキャン角度
       - max  
