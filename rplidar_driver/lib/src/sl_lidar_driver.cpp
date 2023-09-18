@@ -580,7 +580,7 @@ namespace sl {
         {
             Result<nullptr_t> ans = SL_RESULT_OK;
             _disableDataGrabbing();
-			delay(20);
+			delay(timeout);
             {
                 rp::hal::AutoLocker l(_lock);
                 ans = _sendCommand(SL_LIDAR_CMD_GET_DEVICE_INFO);

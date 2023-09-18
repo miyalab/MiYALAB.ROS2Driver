@@ -91,9 +91,12 @@
     "cSpell.words": [
         "limegreen",
         "mercurius",
+        "MIYALAB",
         "Pixmap",
         "rclcpp",
-        "realsense"
+        "realsense",
+        "RPLIDAR",
+        "srvs"
     ],
     "C_Cpp.errorSquiggles": "enabled"
 }

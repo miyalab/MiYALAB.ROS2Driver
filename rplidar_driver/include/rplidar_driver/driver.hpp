@@ -39,17 +39,19 @@ public:
     RPLiDAR(rclcpp::NodeOptions options = rclcpp::NodeOptions());
     ~RPLiDAR();
 private:
-    rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr laser_scan_publisher;
-    rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr set_active_service;
+    rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr m_laser_scan_publisher;
+    rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr m_set_active_service;
     void serviceSetActive(const std::shared_ptr<rmw_request_id_t> header, 
                             const std_srvs::srv::SetBool::Request::SharedPtr request,
                             const std_srvs::srv::SetBool::Response::SharedPtr response);
 
-    const std::string FRAME_ID = "";
-    const bool INVERTED = false;
-    const bool ANGLE_COMPENSATE = false;
-    const std::string SCAN_MODE = "";
-    const double SCAN_FREQUENCY = 0.0;
+    struct Parameter{
+        std::string frame_id;
+        bool inverted = false;
+        bool angle_compensate = false;
+        std::string scan_mode = "";
+        double scan_frequency = 0;
+    } m_param;
 
     void toROS2LaserScan(sensor_msgs::msg::LaserScan *laser, 
         sl_lidar_response_measurement_node_hq_t *nodes, const size_t &node_count, 
@@ -57,12 +59,11 @@ private:
         const float &angle_min, const float &angle_max,
         const float &distance_max
     );
-    sl::ILidarDriver *driver;
+    sl::ILidarDriver *m_driver;
     bool getRPLIDARDeviceInfo(sl::ILidarDriver *driver);
     bool checkRPLIDARHealth(sl::ILidarDriver *driver);
     static float getAngle(const sl_lidar_response_measurement_node_hq_t& node) {return node.angle_z_q14 * 90.f / 16384.f;}
-    template<typename T, typename U>static void forceSet(const T *value, const U &set){*((T*)value)=set;}
-    std::unique_ptr<std::thread> thread;
+    std::unique_ptr<std::thread> m_thread;
     void run();
 };
 }
