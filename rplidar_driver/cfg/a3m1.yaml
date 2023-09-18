@@ -5,3 +5,4 @@ rplidar:
   inverted: false
   angle_compensate: true
   scan_frequency: 20.0
+  offset_theta: 180.0

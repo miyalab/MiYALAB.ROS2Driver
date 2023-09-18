@@ -51,11 +51,12 @@ private:
         bool angle_compensate = false;
         std::string scan_mode = "";
         double scan_frequency = 0;
+        double offset_theta = 0;
     } m_param;
 
     void toROS2LaserScan(sensor_msgs::msg::LaserScan *laser, 
         sl_lidar_response_measurement_node_hq_t *nodes, const size_t &node_count, 
-        const rclcpp::Time &start,const double &scan_time,
+        const rclcpp::Time &stamp,const double &scan_time,
         const float &angle_min, const float &angle_max,
         const float &distance_max
     );

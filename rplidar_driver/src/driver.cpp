@@ -59,6 +59,7 @@ RPLiDAR::RPLiDAR(rclcpp::NodeOptions options) : rclcpp::Node("rplidar", options)
     m_param.angle_compensate = this->declare_parameter("rplidar.angle_compensate", false);
     m_param.scan_mode        = this->declare_parameter("rplidar.scan_mode", "");
     m_param.scan_frequency   = this->declare_parameter("rplidar.scan_frequency", CHANNEL_TYPE == "udp" ? 20.0 : 10.0);
+    m_param.offset_theta     = this->declare_parameter("rplidar.offset.theta", -180.0) * TO_RAD;
     RCLCPP_INFO(this->get_logger(), "Complete! Parameters were initialized.");
 
     // Initialize lidar
@@ -81,6 +82,7 @@ RPLiDAR::RPLiDAR(rclcpp::NodeOptions options) : rclcpp::Node("rplidar", options)
     }
     if(!this->getRPLIDARDeviceInfo(m_driver)) return;
     if(!this->checkRPLIDARHealth(m_driver)) return;
+    m_driver->setMotorSpeed();
     RCLCPP_INFO(this->get_logger(), "Complete! lidar was initialized.");
 
     // Initialize publisher
@@ -129,11 +131,11 @@ void RPLiDAR::serviceSetActive(const std::shared_ptr<rmw_request_id_t> header,
 
 void RPLiDAR::toROS2LaserScan(sensor_msgs::msg::LaserScan *laser, 
         sl_lidar_response_measurement_node_hq_t *nodes, const size_t &node_count, 
-        const rclcpp::Time &start, const double &scan_time,
+        const rclcpp::Time &stamp, const double &scan_time,
         const float &angle_min, const float &angle_max,
         const float &distance_max)
 {
-    laser->header.stamp = start;
+    laser->header.stamp = stamp;
     laser->header.frame_id = m_param.frame_id;
     bool reversed = (angle_max > angle_min);
     if(reversed){
@@ -167,7 +169,7 @@ void RPLiDAR::toROS2LaserScan(sensor_msgs::msg::LaserScan *laser,
             float read_value = (float)nodes[i].dist_mm_q2/4.0f/1000;
             if(read_value == 0.0) laser->ranges[node_count-1-i] = std::numeric_limits<float>::infinity();
             else                  laser->ranges[node_count-1-i] = read_value;
-            laser->intensities[node_count-1-i] = (float)(nodes[i].quality>>2);
+            laser->intensities[node_count-1-i] = (float)(nodes[i].quality >> 2);
         }
     }
 }
@@ -233,12 +235,8 @@ bool RPLiDAR::checkRPLIDARHealth(sl::ILidarDriver *driver)
 void RPLiDAR::run()
 {
     RCLCPP_INFO_STREAM(this->get_logger(), this->get_name() << " has started. thread id = " << std::this_thread::get_id());
-    
-    sl_lidar_response_device_info_t device_info;
-    uint32_t op_result = m_driver->getDeviceInfo(device_info);
-    bool scan_frequency_turning_after_scan = ((device_info.model >> 4) > LIDAR_S_SERIES_MINUM_MAJOR_ID);
-    if(!scan_frequency_turning_after_scan) m_driver->setMotorSpeed(600);
 
+    uint32_t op_result;
     sl::LidarScanMode current_scan_mode;
     if(m_param.scan_mode.empty()) op_result = m_driver->startScan(false, true, 0, &current_scan_mode); // not force scan, use_typical scan mode
     else{
@@ -292,26 +290,15 @@ void RPLiDAR::run()
         const auto stamp = this->now();
         uint32_t op_result = m_driver->grabScanDataHq(nodes, count);
         const double scan_duration = (this->now() - stamp).seconds();
-
         if(op_result != SL_RESULT_OK) continue;
-
-        if(scan_frequency_turning_after_scan){
-            RCLCPP_INFO(this->get_logger(), "set lidar scan freq %.1f Hz(%.1f rpm)", m_param.scan_frequency, m_param.scan_frequency*60);
-            m_driver->setMotorSpeed(m_param.scan_frequency*60.0);
-            scan_frequency_turning_after_scan = false;            
-            continue;
-        }
-        op_result = m_driver->ascendScanData(nodes, count);
-
-        auto laser_scan_msg = std::make_unique<sensor_msgs::msg::LaserScan>();
 
         float angle_min = 0.0;
         float angle_max = 359.0 * TO_RAD;
         sl_lidar_response_measurement_node_hq_t *corrected_nodes = nodes;
         size_t corrected_node_count = count;
-
+        op_result = m_driver->ascendScanData(nodes, count);
         if(op_result == SL_RESULT_OK){
-            if(angle_compensate_multiple){
+            if(m_param.angle_compensate){
                 const int angle_compensate_nodes_count = 360 * angle_compensate_multiple;
                 sl_lidar_response_measurement_node_hq_t angle_compensate_nodes[angle_compensate_nodes_count];
                 memset(angle_compensate_nodes, 0, angle_compensate_nodes_count * sizeof(sl_lidar_response_measurement_node_hq_t));
@@ -324,7 +311,7 @@ void RPLiDAR::run()
                         for(int j=0; j<angle_compensate_multiple; j++){
                             int angle_compensate_nodes_index = angle_value - angle_compensate_offset + j;
                             if(angle_compensate_nodes_index >= angle_compensate_nodes_count){
-                                angle_compensate_nodes_index -= 1;
+                                angle_compensate_nodes_index = angle_compensate_nodes_count - 1;
                             }
                             angle_compensate_nodes[angle_compensate_nodes_index] = nodes[i];
                         }
@@ -335,20 +322,18 @@ void RPLiDAR::run()
                 corrected_node_count = angle_compensate_nodes_count;
             }
             else{
-                int start_node = 0, end_node = 0;
-                int i=0;
+                int i, j;
                 for(i=0; nodes[i].dist_mm_q2 == 0; i++);
-                start_node = i;
-                for(i=count-1; nodes[i].dist_mm_q2 == 0; i--);
-                end_node = i;
+                for(j=count-1; nodes[j].dist_mm_q2 == 0; j--);
 
-                angle_min = this->getAngle(nodes[start_node]) * TO_RAD;
-                angle_max = this->getAngle(nodes[end_node])   * TO_RAD;
-                corrected_nodes = &nodes[start_node];
-                corrected_node_count = end_node-start_node+1;
+                angle_min = this->getAngle(nodes[i]) * TO_RAD;
+                angle_max = this->getAngle(nodes[j]) * TO_RAD;
+                corrected_nodes = &nodes[i];
+                corrected_node_count = j-i+1;
             }
         }
-        
+
+        auto laser_scan_msg = std::make_unique<sensor_msgs::msg::LaserScan>();        
         this->toROS2LaserScan(laser_scan_msg.get(), 
             corrected_nodes, corrected_node_count, 
             stamp, scan_duration,
