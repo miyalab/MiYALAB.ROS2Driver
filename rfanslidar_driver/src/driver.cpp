@@ -61,6 +61,7 @@ RFansLiDAR::RFansLiDAR(rclcpp::NodeOptions options) : rclcpp::Node("rfans_lidar"
     const std::string IP_ADDRESS = this->declare_parameter("rfans.device.ip_address", "192.168.0.3");
     const std::string MODEL_NAME = this->declare_parameter("rfans.device.model", "R-Fans-16");
     const int STATUS_PORT = this->declare_parameter("rfans.device.status_port", 2030);
+    this->forceSet(&this->FRAME_ID, this->declare_parameter("rfans.frame_id", "rfans"));
     this->forceSet(&this->SCAN_RATE, this->declare_parameter("rfans.scan.rate", 20));
     this->forceSet(&this->SCAN_THETA_MIN, this->declare_parameter("rfans.scan.theta.min", -180.0) * TO_RAD);
     this->forceSet(&this->SCAN_THETA_MAX, this->declare_parameter("rfans.scan.theta.max",  180.0) * TO_RAD);
