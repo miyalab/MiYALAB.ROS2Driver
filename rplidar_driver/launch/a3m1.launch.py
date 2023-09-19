@@ -25,17 +25,13 @@ def generate_launch_description():
                 plugin='MiYALAB::ROS2::RPLiDAR',
                 name='a3m1',
                 parameters=[join(pkg_prefix, "cfg/a3m1.yaml")],
-                # remappings=[
-                #     # publisher
-                #     ("~/cmd_vel",   "~/cmd_vel"),
-                #     ("~/is_active", "~/is_active"),
+                remappings=[
+                    # publisher
+                    ("~/scan",   "~/scan"),
 
-                #     # subscriber
-                #     ("/joy/state", "/joystick/state"),
-
-                #     # service
-                #     ("~/set_active", "~/set_active")
-                # ],
+                    # service
+                    ("~/set_active", "~/set_active")
+                ],
                 extra_arguments=[{'use_intra_process_comms': True}]
             )
         ]

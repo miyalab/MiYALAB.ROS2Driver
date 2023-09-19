@@ -52,9 +52,9 @@ RPLiDAR::RPLiDAR(rclcpp::NodeOptions options) : rclcpp::Node("rplidar", options)
     const int         TCP_PORT        = this->declare_parameter("rplidar.tcp_port", 20108);
     const std::string UDP_IP          = this->declare_parameter("rplidar.udp_ip", "192.168.11.2");
     const int         UDP_PORT        = this->declare_parameter("rplidar.udp_port", 8089);
-    const std::string SERIAL_PORT     = this->declare_parameter("rplidar.serial_port", "/dev/ttyUSB0");
-    const int         SERIAL_BAUDRATE = this->declare_parameter("rplidar.serial_baudrate", 115200);
-    m_param.frame_id         = this->declare_parameter("rplidar.frame_id", "laser_frame");
+    const std::string SERIAL_PORT     = this->declare_parameter("rplidar.serial.port", "/dev/ttyUSB0");
+    const int         SERIAL_BAUDRATE = this->declare_parameter("rplidar.serial.baudrate", 115200);
+    m_param.frame_id         = this->declare_parameter("rplidar.frame_id", "rplidar");
     m_param.inverted         = this->declare_parameter("rplidar.inverted", false);
     m_param.angle_compensate = this->declare_parameter("rplidar.angle_compensate", false);
     m_param.scan_mode        = this->declare_parameter("rplidar.scan_mode", "");
@@ -146,6 +146,8 @@ void RPLiDAR::toROS2LaserScan(sensor_msgs::msg::LaserScan *laser,
         laser->angle_min = M_PI - angle_min;
         laser->angle_max = M_PI - angle_max;
     }
+    // laser->angle_min = angle_min;
+    // laser->angle_max = angle_max;
 
     laser->angle_increment = (laser->angle_max - laser->angle_min)/(double)(node_count-1);
     laser->scan_time = scan_time;
@@ -155,8 +157,7 @@ void RPLiDAR::toROS2LaserScan(sensor_msgs::msg::LaserScan *laser,
     laser->intensities.resize(node_count);
     laser->ranges.resize(node_count);
 
-    bool reverse_data = (!m_param.inverted && reversed) || (m_param.inverted && !reversed);
-    if(!reverse_data){
+    if( (!m_param.inverted && reversed) || (m_param.inverted && !reversed)){
         for(size_t i=0; i<node_count; i++){
             float read_value = (float)nodes[i].dist_mm_q2/4.0f/1000;
             if(read_value == 0.0) laser->ranges[i] = std::numeric_limits<float>::infinity();
@@ -283,21 +284,19 @@ void RPLiDAR::run()
     else RCLCPP_ERROR(this->get_logger(), "Can not start scan: %08x", op_result);
 
     // Main loop
-    for(rclcpp::WallRate loop(m_param.scan_frequency); rclcpp::ok(); loop.sleep()){
-        sl_lidar_response_measurement_node_hq_t nodes[8192];
+    for(rclcpp::WallRate loop(m_param.scan_frequency * 2); rclcpp::ok(); loop.sleep()){
+        sl_lidar_response_measurement_node_hq_t nodes[8192] = {0};
         size_t count = sizeof(nodes)/sizeof(nodes[0]);
         
         const auto stamp = this->now();
-        uint32_t op_result = m_driver->grabScanDataHq(nodes, count);
-        const double scan_duration = (this->now() - stamp).seconds();
-        if(op_result != SL_RESULT_OK) continue;
+        if(m_driver->grabScanDataHq(nodes, count) != SL_RESULT_OK) continue;
+        const double scan_time = (this->now() - stamp).seconds();
 
         float angle_min = 0.0;
-        float angle_max = 359.0 * TO_RAD;
+        float angle_max = 360.0 * TO_RAD;
         sl_lidar_response_measurement_node_hq_t *corrected_nodes = nodes;
         size_t corrected_node_count = count;
-        op_result = m_driver->ascendScanData(nodes, count);
-        if(op_result == SL_RESULT_OK){
+        if(m_driver->ascendScanData(nodes, count) == SL_RESULT_OK){
             if(m_param.angle_compensate){
                 const int angle_compensate_nodes_count = 360 * angle_compensate_multiple;
                 sl_lidar_response_measurement_node_hq_t angle_compensate_nodes[angle_compensate_nodes_count];
@@ -322,21 +321,27 @@ void RPLiDAR::run()
                 corrected_node_count = angle_compensate_nodes_count;
             }
             else{
-                int i, j;
-                for(i=0; nodes[i].dist_mm_q2 == 0; i++);
-                for(j=count-1; nodes[j].dist_mm_q2 == 0; j--);
+                int i=0, j=count-1;
+                while(nodes[i++].dist_mm_q2 == 0);
+                while(nodes[j--].dist_mm_q2 == 0);
 
-                angle_min = this->getAngle(nodes[i]) * TO_RAD;
-                angle_max = this->getAngle(nodes[j]) * TO_RAD;
+                angle_min = this->getAngle(nodes[i-1]) * TO_RAD;
+                angle_max = this->getAngle(nodes[j+1]) * TO_RAD;
+
                 corrected_nodes = &nodes[i];
                 corrected_node_count = j-i+1;
             }
         }
 
+        RCLCPP_INFO(this->get_logger(), "angle min: %f", angle_min);
+        RCLCPP_INFO(this->get_logger(), "angle max: %f", angle_max);
+        RCLCPP_INFO(this->get_logger(), "scan time: %lf", scan_time);
+
+
         auto laser_scan_msg = std::make_unique<sensor_msgs::msg::LaserScan>();        
         this->toROS2LaserScan(laser_scan_msg.get(), 
             corrected_nodes, corrected_node_count, 
-            stamp, scan_duration,
+            stamp, scan_time,
             angle_min, angle_max, 
             max_distance
         );
