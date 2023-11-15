@@ -1,5 +1,5 @@
-#ifndef __MIYALAB_ROS2_DRIVER_RFANS_LIDAR_DRIVER_HPP__
-#define __MIYALAB_ROS2_DRIVER_RFANS_LIDAR_DRIVER_HPP__
+#ifndef __MIYALAB_ROS2_DRIVER_MIYALAB_RFANS_LIDAR_HPP__
+#define __MIYALAB_ROS2_DRIVER_MIYALAB_RFANS_LIDAR_HPP__
 
 //-----------------------------
 // include
@@ -45,23 +45,24 @@ private:
     rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr depth_img_publisher = nullptr;
     rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr intensity_img_publisher = nullptr;
 
-    const int SCAN_RATE = 20;
-    const std::string FRAME_ID = "";
-    const double SCAN_THETA_MIN = -M_PI;
-    const double SCAN_THETA_MAX =  M_PI;
-    const double SCAN_PHI_MIN   = -M_PI;
-    const double SCAN_PHI_MAX   =  M_PI;
-    const double POINTS_NEAR_RANGE = 50;
-    const double OFFSET_LINEAR_X = 0.0;
-    const double OFFSET_LINEAR_Y = 0.0;
-    const double OFFSET_LINEAR_Z = 0.0;
-    const double OFFSET_ANGULAR_X = 0.0;
-    const double OFFSET_ANGULAR_Y = 0.0;
-    const double OFFSET_ANGULAR_Z = 0.0;
-    const double IMG_THETA_RESOLUTION = 0.36;
-    const double IMG_PHI_RESOLUTION = 2.0;
-    const cv::Size IMG_SIZE = {0,0};
-    template<typename T, typename U> static void forceSet(const T *value, const U &set_value){*((T*)value) = set_value;}
+    struct Parameter{
+        int scan_rate = 20;
+        std::string frame_id = "";
+        double scan_theta_min = -M_PI;
+        double scan_theta_max =  M_PI;
+        double scan_phi_min = -M_PI;
+        double scan_phi_max =  M_PI;
+        double points_near_range = 50.0;
+        double offset_linear_x = 0.0;
+        double offset_linear_y = 0.0;
+        double offset_linear_z = 0.0;
+        double offset_angular_x = 0.0;
+        double offset_angular_y = 0.0;
+        double offset_angular_z = 0.0;
+        double img_theta_resolution = 0.36;
+        double img_phi_resolution = 2.0;
+        cv::Size img_size;
+    } m_param;
 
     void pointsPublish(const std_msgs::msg::Header &header, const MiYALAB::Sensor::PointCloudPolar &polars);
     void imagePublish(const std_msgs::msg::Header &header, const MiYALAB::Sensor::PointCloudPolar &polars);

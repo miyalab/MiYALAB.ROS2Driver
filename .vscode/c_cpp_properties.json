@@ -3,12 +3,11 @@
         {
             "includePath": [
                 "${workspaceFolder}/**",
-                "${workspaceFolder}/rfanslidar_driver/include/**",
+                "${workspaceFolder}/miyalab_rfanslidar/include/**",
                 "${workspaceFolder}/rplidar_driver/include/**",
                 "/home/kmiyauchi/workspace/ros2_ws/install/miyalab_interfaces/include/**",
                 "/usr/include/**",
                 "/opt/ros/humble/include/**",
-                "/home/kmiyauchi/ros2_ws/src/MiYALAB.ROS2Driver/rfanslidar_driver/include",
                 "/opt/ros/humble/include/sensor_msgs",
                 "/opt/ros/humble/include/std_msgs",
                 "/opt/ros/humble/include/geometry_msgs",

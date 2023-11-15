@@ -16,7 +16,7 @@
 // MiYALAB
 #include <MiYALAB/Sensor/PointCloud/PointCloudPolar.hpp>
 
-#include "rfanslidar_driver/driver.hpp"
+#include "miyalab_rfanslidar/driver.hpp"
 
 //-----------------------------
 // Symbol
@@ -58,36 +58,36 @@ RFansLiDAR::RFansLiDAR(rclcpp::NodeOptions options) : rclcpp::Node("rfans_lidar"
 
     // Initialize parameters
     RCLCPP_INFO(this->get_logger(), "Initialize parameters...");
-    const std::string IP_ADDRESS = this->declare_parameter("rfans.device.ip_address", "192.168.0.3");
-    const std::string MODEL_NAME = this->declare_parameter("rfans.device.model", "R-Fans-16");
-    const int STATUS_PORT = this->declare_parameter("rfans.device.status_port", 2030);
-    this->forceSet(&this->FRAME_ID, this->declare_parameter("rfans.frame_id", "rfans"));
-    this->forceSet(&this->SCAN_RATE, this->declare_parameter("rfans.scan.rate", 20));
-    this->forceSet(&this->SCAN_THETA_MIN, this->declare_parameter("rfans.scan.theta.min", -180.0) * TO_RAD);
-    this->forceSet(&this->SCAN_THETA_MAX, this->declare_parameter("rfans.scan.theta.max",  180.0) * TO_RAD);
-    this->forceSet(&this->SCAN_PHI_MIN, this->declare_parameter("rfans.scan.phi.min", -15.0) * TO_RAD);
-    this->forceSet(&this->SCAN_PHI_MAX, this->declare_parameter("rfans.scan.phi.max",  15.0) * TO_RAD);
-    const bool POINTS_PUBLISH = this->declare_parameter("rfans.points.publish", false);
-    const bool POINTS_NEAR_PUBLISH = this->declare_parameter("rfans.points.near_publish", false);
-    this->forceSet(&POINTS_NEAR_RANGE, this->declare_parameter("rfans.points.near_range", 50.0));
-    bool DEPTH_IMG_PUBLISH = this->declare_parameter("rfans.img.depth_publish", false);
-    bool INTENSITY_IMG_PUBLISH = this->declare_parameter("rfans.img.intensity_publish", false);
-    this->forceSet(&this->OFFSET_LINEAR_X, this->declare_parameter("rfans.offset.linear.x", 0.0));
-    this->forceSet(&this->OFFSET_LINEAR_Y, this->declare_parameter("rfans.offset.linear.y", 0.0));
-    this->forceSet(&this->OFFSET_LINEAR_Z, this->declare_parameter("rfans.offset.linear.z", 0.0));
-    this->forceSet(&this->OFFSET_ANGULAR_X, this->declare_parameter("rfans.offset.angular.x", 0.0) * TO_RAD);
-    this->forceSet(&this->OFFSET_ANGULAR_Y, this->declare_parameter("rfans.offset.angular.y", 0.0) * TO_RAD);
-    this->forceSet(&this->OFFSET_ANGULAR_Z, this->declare_parameter("rfans.offset.angular.z", 0.0) * TO_RAD);
-    this->forceSet(&this->IMG_THETA_RESOLUTION, this->declare_parameter("rfans.img.theta_resolution", 0.36) * TO_RAD);
-    this->forceSet(&this->IMG_PHI_RESOLUTION, this->declare_parameter("rfans.img.phi_resolution", 2.0) * TO_RAD);
-    this->forceSet(&this->IMG_SIZE.width, (this->SCAN_THETA_MAX - this->SCAN_THETA_MIN) / this->IMG_THETA_RESOLUTION);
-    this->forceSet(&this->IMG_SIZE.height, (this->SCAN_PHI_MAX - this->SCAN_PHI_MIN) / this->IMG_PHI_RESOLUTION);
+    const std::string IP_ADDRESS     = this->declare_parameter("rfans.device.ip_address", "192.168.0.3");
+    const std::string MODEL_NAME     = this->declare_parameter("rfans.device.model", "R-Fans-16");
+    const int STATUS_PORT            = this->declare_parameter("rfans.device.status_port", 2030);
+    const bool POINTS_PUBLISH        = this->declare_parameter("rfans.points.publish", false);
+    const bool POINTS_NEAR_PUBLISH   = this->declare_parameter("rfans.points.near_publish", false);
+    const bool DEPTH_IMG_PUBLISH     = this->declare_parameter("rfans.img.depth_publish", false);
+    const bool INTENSITY_IMG_PUBLISH = this->declare_parameter("rfans.img.intensity_publish", false);
+    m_param.frame_id          = this->declare_parameter("rfans.frame_id", "rfans");
+    m_param.scan_rate         = this->declare_parameter("rfans.scan.rate", 20);
+    m_param.scan_theta_min    = this->declare_parameter("rfans.scan.theta.min", -180.0) * TO_RAD;
+    m_param.scan_theta_max    = this->declare_parameter("rfans.scan.theta.max",  180.0) * TO_RAD;
+    m_param.scan_phi_min      = this->declare_parameter("rfans.scan.phi.min", -15.0) * TO_RAD;
+    m_param.scan_phi_max      = this->declare_parameter("rfans.scan.phi.max",  15.0) * TO_RAD;
+    m_param.points_near_range = this->declare_parameter("rfans.points.near_range", 50.0);
+    m_param.offset_linear_x   = this->declare_parameter("rfans.offset.linear.x", 0.0);
+    m_param.offset_linear_y   = this->declare_parameter("rfans.offset.linear.y", 0.0);
+    m_param.offset_linear_z   = this->declare_parameter("rfans.offset.linear.z", 0.0);
+    m_param.offset_angular_x  = this->declare_parameter("rfans.offset.angular.x", 0.0) * TO_RAD;
+    m_param.offset_angular_y  = this->declare_parameter("rfans.offset.angular.y", 0.0) * TO_RAD;
+    m_param.offset_angular_z  = this->declare_parameter("rfans.offset.angular.z", 0.0) * TO_RAD;
+    m_param.img_theta_resolution = this->declare_parameter("rfans.img.theta_resolution", 0.36) * TO_RAD;
+    m_param.img_phi_resolution   = this->declare_parameter("rfans.img.phi_resolution", 2.0) * TO_RAD;
+    m_param.img_size.width  = (m_param.scan_theta_max - m_param.scan_theta_min) / m_param.img_theta_resolution;
+    m_param.img_size.height = (m_param.scan_phi_max - m_param.scan_phi_min) / m_param.img_phi_resolution;
     RCLCPP_INFO(this->get_logger(), "Complete! Parameters were initialized.");
 
     // Initialize lidar
     RCLCPP_INFO(this->get_logger(), "Initialize lidar...");
     this->rfans = std::make_shared<MiYALAB::Sensor::RFansDriver>(IP_ADDRESS, STATUS_PORT, MODEL_NAME);
-    if(!this->rfans->scanStart(this->SCAN_RATE)){
+    if(!this->rfans->scanStart(m_param.scan_rate)){
         RCLCPP_ERROR(this->get_logger(), "Failure lidar scan start");
         return;
     }
@@ -132,25 +132,25 @@ void RFansLiDAR::pointsPublish(const std_msgs::msg::Header &header, const MiYALA
     points_msg->channels[1].name = points_near_msg->channels[1].name = "intensity";
 
     for(int i=0, size=polars.polars.size(); i<size; i++){
-        const double phi = polars.polars[i].phi + this->OFFSET_ANGULAR_Y;
-        const double theta = polars.polars[i].theta + this->OFFSET_ANGULAR_Z;
+        const double phi = polars.polars[i].phi + m_param.offset_angular_y;
+        const double theta = polars.polars[i].theta + m_param.offset_angular_z;
         geometry_msgs::msg::Point32 point;
         
         const double cos_phi = std::cos(phi);
-        point.x = polars.polars[i].range * cos_phi * std::cos(theta) + this->OFFSET_LINEAR_X;
+        point.x = polars.polars[i].range * cos_phi * std::cos(theta) + m_param.offset_linear_x;
         const double y = polars.polars[i].range * cos_phi * std::sin(theta);
         const double z = polars.polars[i].range * std::sin(phi);
-        const double cos_x = std::cos(this->OFFSET_ANGULAR_X);
-        const double sin_x = std::sin(this->OFFSET_ANGULAR_X);
-        point.y = y * cos_x - z * sin_x + this->OFFSET_LINEAR_Y;
-        point.z = y * sin_x + z * cos_x + this->OFFSET_LINEAR_Z;
+        const double cos_x = std::cos(m_param.offset_angular_x);
+        const double sin_x = std::sin(m_param.offset_angular_x);
+        point.y = y * cos_x - z * sin_x + m_param.offset_linear_y;
+        point.z = y * sin_x + z * cos_x + m_param.offset_linear_y;
 
         if(this->points_publisher.get()){
             points_msg->points.emplace_back(point);
             points_msg->channels[0].values.emplace_back(polars.polars[i].range);
             points_msg->channels[1].values.emplace_back(polars.channels[0].values[i]);
         }
-        if(this->points_near_publisher.get() && polars.polars[i].range < this->POINTS_NEAR_RANGE){
+        if(this->points_near_publisher.get() && polars.polars[i].range < m_param.points_near_range){
             points_near_msg->points.emplace_back(point);
             points_near_msg->channels[0].values.emplace_back(polars.polars[i].range);
             points_near_msg->channels[1].values.emplace_back(polars.channels[0].values[i]);
@@ -166,37 +166,37 @@ void RFansLiDAR::imagePublish(const std_msgs::msg::Header &header, const MiYALAB
     cv_bridge::CvImage intensity_img;
     depth_img.header = intensity_img.header = header;
     depth_img.encoding = intensity_img.encoding = sensor_msgs::image_encodings::TYPE_32FC1;
-    depth_img.image     = cv::Mat(this->IMG_SIZE, CV_32FC1, cv::Scalar(-1.0f));
-    intensity_img.image = cv::Mat(this->IMG_SIZE, CV_32FC1, cv::Scalar(-1.0f));
+    depth_img.image     = cv::Mat(m_param.img_size, CV_32FC1, cv::Scalar(-1.0f));
+    intensity_img.image = cv::Mat(m_param.img_size, CV_32FC1, cv::Scalar(-1.0f));
 
-    std::vector<std::vector<float>> depth(this->IMG_SIZE.height, std::vector<float>(this->IMG_SIZE.width, -1.0f));
-    std::vector<std::vector<float>> intensity(this->IMG_SIZE.height, std::vector<float>(this->IMG_SIZE.width, -1.0f));
+    std::vector<std::vector<float>> depth(m_param.img_size.height, std::vector<float>(m_param.img_size.width, -1.0f));
+    std::vector<std::vector<float>> intensity(m_param.img_size.height, std::vector<float>(m_param.img_size.width, -1.0f));
     for(int i=0, size=polars.polars.size(); i<size; i++){
-        double theta = polars.polars[i].theta + this->OFFSET_ANGULAR_Z;
+        double theta = polars.polars[i].theta + m_param.offset_angular_z;
         if(theta > M_PI) theta -= 2*M_PI;
         if(theta < M_PI) theta += 2*M_PI;
-        const int px = this->IMG_SIZE.width - (polars.polars[i].theta - this->SCAN_THETA_MIN) / this->IMG_THETA_RESOLUTION;
-        const int py = this->IMG_SIZE.height - (polars.polars[i].phi - this->SCAN_PHI_MIN) / this->IMG_PHI_RESOLUTION;
-        if(0<=px && px<this->IMG_SIZE.width && 0<=py && py<this->IMG_SIZE.height){
+        const int px = m_param.img_size.width - (polars.polars[i].theta - m_param.scan_theta_min) / m_param.img_theta_resolution;
+        const int py = m_param.img_size.height - (polars.polars[i].phi - m_param.scan_phi_min) / m_param.img_phi_resolution;
+        if(0<=px && px<m_param.img_size.width && 0<=py && py<m_param.img_size.height){
             depth[py][px] = polars.polars[i].range;
             intensity[py][px] = polars.channels[0].values[i];
         }
     }
 
     // スムージング処理
-    for(int y=0; y<this->IMG_SIZE.height; y++){
+    for(int y=0; y<m_param.img_size.height; y++){
         auto depth_img_ptr = &depth_img.image.at<float>(y,0);
         auto intensity_img_ptr = &intensity_img.image.at<float>(y,0);
-        for(int x=0; x<this->IMG_SIZE.width; x++){
+        for(int x=0; x<m_param.img_size.width; x++){
             // データ欠如箇所は周辺画素の平均値
             if(depth[y][x] < 0){
                 int cnt = 0;
                 float depth_sum = 0;
                 float intensity_sum = 0;
                 for(int j=y-1; j<=y+1; j++){
-                    if(j<0 || this->IMG_SIZE.height<=j) continue;
+                    if(j<0 || m_param.img_size.height<=j) continue;
                     for(int i=x-1; i<=x+1; i++){
-                        if(i<0 || this->IMG_SIZE.width<=i) continue; 
+                        if(i<0 || m_param.img_size.width<=i) continue; 
                         if(depth[j][i]>=0){
                             depth_sum += depth[j][i];
                             intensity_sum += intensity[j][i];
@@ -245,10 +245,10 @@ void RFansLiDAR::run()
     const bool image_publish  = (this->depth_img_publisher.get() != nullptr) || (this->intensity_img_publisher.get() != nullptr);
 
     // Main loop
-    for(rclcpp::WallRate loop(this->SCAN_RATE); rclcpp::ok(); loop.sleep()){
+    for(rclcpp::WallRate loop(m_param.scan_rate); rclcpp::ok(); loop.sleep()){
         std_msgs::msg::Header header;
         MiYALAB::Sensor::PointCloudPolar polars;
-        header.frame_id = this->FRAME_ID;
+        header.frame_id = m_param.frame_id;
         header.stamp = this->now();
         this->rfans->getPoints(&polars);
 
