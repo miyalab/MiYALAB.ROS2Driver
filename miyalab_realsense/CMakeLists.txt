@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(miyalab_rfanslidar)
+project(miyalab_realsense)
 
 # Default to C99
 if(NOT CMAKE_C_STANDARD)
@@ -28,7 +28,6 @@ link_directories(
 )
 include_directories(
   include
-  lib/RFansLiDAR/include
 )
 add_library(${PROJECT_NAME} SHARED
   src/driver.cpp
@@ -41,8 +40,7 @@ ament_target_dependencies(${PROJECT_NAME}
   cv_bridge
   OpenCV
 )
-target_link_libraries(${PROJECT_NAME} MiYALAB.Cpp.Sensor.RFansLiDAR)
-rclcpp_components_register_nodes(${PROJECT_NAME} "MiYALAB::ROS2::RFansLiDAR")
+rclcpp_components_register_nodes(${PROJECT_NAME} "MiYALAB::ROS2::Realsense")
 
 install(TARGETS ${PROJECT_NAME} DESTINATION lib)
 
