@@ -73,15 +73,14 @@ RPLiDAR::RPLiDAR(rclcpp::NodeOptions options) : rclcpp::Node("rplidar", options)
     sl::IChannel *channel;
     if(CHANNEL_TYPE == "tcp")      channel = *sl::createTcpChannel(TCP_IP, TCP_PORT);
     else if(CHANNEL_TYPE == "udp") channel = *sl::createUdpChannel(UDP_IP, UDP_PORT);
-    else                                 channel = *sl::createSerialPortChannel(SERIAL_PORT, SERIAL_BAUDRATE);
+    else                           channel = *sl::createSerialPortChannel(SERIAL_PORT, SERIAL_BAUDRATE);
     if(SL_IS_FAIL(m_driver->connect(channel))){
         if(CHANNEL_TYPE == "tcp")      RCLCPP_ERROR(this->get_logger(), "Error, cannot connect to the ip addr %s with the tcp port %d", TCP_IP.c_str(), TCP_PORT);
         else if(CHANNEL_TYPE == "udp") RCLCPP_ERROR(this->get_logger(), "Error, cannot connect to the ip addr %s with the udp port %d", UDP_IP.c_str(), UDP_PORT);
         else                           RCLCPP_ERROR(this->get_logger(), "Error, cannot bind to the specified serial port %s.", SERIAL_PORT.c_str());
         return;
     }
-    if(!this->getRPLIDARDeviceInfo(m_driver)) return;
-    if(!this->checkRPLIDARHealth(m_driver)) return;
+    if(!this->getRPLIDARDeviceInfo(m_driver) || !this->checkRPLIDARHealth(m_driver)) return;
     m_driver->setMotorSpeed();
     RCLCPP_INFO(this->get_logger(), "Complete! lidar was initialized.");
 
@@ -146,8 +145,6 @@ void RPLiDAR::toROS2LaserScan(sensor_msgs::msg::LaserScan *laser,
         laser->angle_min = M_PI - angle_min;
         laser->angle_max = M_PI - angle_max;
     }
-    // laser->angle_min = angle_min;
-    // laser->angle_max = angle_max;
 
     laser->angle_increment = (laser->angle_max - laser->angle_min)/(double)(node_count-1);
     laser->scan_time = scan_time;

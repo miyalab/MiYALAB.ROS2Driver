@@ -4,7 +4,8 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/miyalab_rfanslidar/include/**",
-                "${workspaceFolder}/miyalab_rplidar/include/**",
+                "${workspaceFolder}/miyalab_rplidar/include/",
+                "${workspaceFolder}/miyalab_rplidar/lib/include/",
                 "/home/kmiyauchi/workspace/ros2_ws/install/miyalab_interfaces/include/**",
                 "/usr/include/**",
                 "/opt/ros/humble/include/**",
