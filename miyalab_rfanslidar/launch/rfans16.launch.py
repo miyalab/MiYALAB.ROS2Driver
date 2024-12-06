@@ -7,7 +7,7 @@ from launch import LaunchDescription
 from launch_ros.actions import Node
 
 def generate_launch_description():
-    pkg_prefix = get_package_share_directory("rfanslidar_driver")
+    pkg_prefix = get_package_share_directory("miyalab_rfanslidar")
    
     container = Node(
 	    package='rclcpp_components',
@@ -21,7 +21,7 @@ def generate_launch_description():
         target_container="lidar_container",
         composable_node_descriptions=[
             ComposableNode(
-                package='rfanslidar_driver',
+                package='miyalab_rfanslidar',
                 plugin='MiYALAB::ROS2::RFansLiDAR',
                 name='rfans16',
                 parameters=[join(pkg_prefix, "cfg/rfans16.yaml")],

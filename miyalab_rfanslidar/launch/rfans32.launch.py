@@ -18,7 +18,7 @@ def generate_launch_description():
 	)
 
     components = LoadComposableNodes(
-        target_container="lidar_container",
+        target_container="miyalab_rfanslidar",
         composable_node_descriptions=[
             ComposableNode(
                 package='rfanslidar_driver',

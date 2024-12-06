@@ -31,4 +31,4 @@
 *.out
 *.app
 
-rfanslidar_driver/lib/RFansLiDAR/build/
+miyalab_rfanslidar/lib/RFansLiDAR/build/
